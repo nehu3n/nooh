@@ -8,6 +8,7 @@ allowBuilds:
   lefthook: false
 
 catalog:
+  '@types/node': ^22.20.2
   hono: ^4.13.7
   tsdown: ^0.23.0
   tsx: ^4.23.13

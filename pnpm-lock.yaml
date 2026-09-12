@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    '@types/node':
+      specifier: ^22.20.2
+      version: 22.20.2
     hono:
       specifier: ^4.13.7
       version: 4.13.7
@@ -76,6 +79,9 @@ importers:
         specifier: workspace:*
         version: link:../compiler
     devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 22.20.2
       tsdown:
         specifier: 'catalog:'
         version: 0.23.0(tsx@4.23.13)(typescript@7.0.2)
