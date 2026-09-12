@@ -11,13 +11,30 @@ const hasErrors = (diagnostics: Compilation["diagnostics"]): boolean =>
   diagnostics.some((diagnostic) => diagnostic.severity === "error");
 
 export const compile = async (input: CompileInput): Promise<Compilation> => {
-  const config = await loadConfig(input);
+  const configResult = await loadConfig(input);
 
-  const discovered = discover(input.sources, config);
+  if (!configResult.config) {
+    return {
+      diagnostics: configResult.diagnostics,
+      model: {
+        config: {
+          routesRoot: "",
+          source: input.config,
+          value: {},
+        },
+        groups: [],
+        routes: [],
+      },
+      output: null,
+      plan: null,
+    };
+  }
+
+  const discovered = discover(input.sources, configResult.config);
   const parsed = parse(discovered);
-  const analyzed = analyze(parsed, config);
+  const analyzed = analyze(parsed, configResult.config);
 
-  const { diagnostics } = analyzed;
+  const diagnostics = [...configResult.diagnostics, ...analyzed.diagnostics];
 
   if (hasErrors(diagnostics)) {
     return {
