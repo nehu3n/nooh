@@ -23,15 +23,45 @@ const getRoutesForRouter = (
     .filter((route) => route.routerPath === routerPath)
     .sort((a, b) => a.method.localeCompare(b.method));
 
-const renderMethod = (
-  route: RouteModel,
-  _moduleId: string,
-  _typesModuleId: string
-): string => {
-  const path = JSON.stringify(route.fullPath);
+const renderValidationInput = (): string => {
+  const inputs = VALIDATION_TARGETS.map(
+    (target) =>
+      `  & (${target} extends keyof V ? HandlerInput<ValidationHandler<"${target}", NonNullable<V[${JSON.stringify(target)}]>>> : {})`
+  );
 
   return [
-    `type Path = ${path};`,
+    "type ValidationInput<V extends ValidationOptions> =",
+    ...inputs,
+    ";",
+  ].join("\n");
+};
+
+const renderValidationHandlers = (): string =>
+  [
+    "type ValidationHandlers<V extends ValidationOptions> = [",
+    ...VALIDATION_TARGETS.map(
+      (target) =>
+        `  ...(V extends { readonly ${target}: infer Schema extends StandardSchema } ? [ValidationHandler<"${target}", Schema>] : []),`
+    ),
+    "];",
+  ].join("\n");
+
+const renderValidationCalls = (): string =>
+  VALIDATION_TARGETS.map(
+    (target) =>
+      `    ...(input.validation?.${target} !== undefined ? [sValidator("${target}", input.validation.${target})] : []),`
+  ).join("\n");
+
+const renderMethod = (
+  route: RouteModel,
+  moduleId: string,
+  typesModuleId: string
+): string => {
+  const methodName = route.method;
+  const _typesImport = relativeModuleSpecifier(moduleId, typesModuleId);
+
+  return [
+    `type Path = ${JSON.stringify(route.fullPath)};`,
     "",
     "type RouteHandler = Handler<App, Path>;",
     "type RouteMiddleware = MiddlewareHandler<App, Path>;",
@@ -57,10 +87,64 @@ const renderMethod = (
     "  typeof sValidator<Schema, Target, App, Path>",
     ">;",
     "",
-    "type ValidationInput<V extends ValidationOptions> =",
-    ...VALIDATION_TARGETS.map((target) => `  ${target} extends keyof V`),
+    renderValidationInput(),
     "",
-  ].join("\n");
+    renderValidationHandlers(),
+    "",
+    "type EndpointOptions<",
+    "  M extends readonly RouteMiddleware[],",
+    "  V extends ValidationOptions,",
+    "  R extends HandlerResponse<any>,",
+    "> = {",
+    "  readonly middleware?: M;",
+    "  readonly validation?: V;",
+    "  readonly handler: Handler<",
+    "    App,",
+    "    Path,",
+    "    ValidationInput<V>,",
+    "    R",
+    "  >;",
+    "};",
+    "",
+    `export function ${methodName}<R extends HandlerResponse<any>>(`,
+    "  handler: Handler<App, Path, {}, R>,",
+    "): readonly [Handler<App, Path, {}, R>];",
+    "",
+    `export function ${methodName}<`,
+    "  M extends readonly RouteMiddleware[],",
+    "  V extends ValidationOptions,",
+    "  R extends HandlerResponse<any>,",
+    ">(",
+    "  options: EndpointOptions<M, V, R>,",
+    "): readonly [",
+    "  ...M,",
+    "  ...ValidationHandlers<V>,",
+    "  Handler<App, Path, ValidationInput<V>, R>,",
+    "];",
+    "",
+    `export function ${methodName}<`,
+    "  M extends readonly RouteMiddleware[],",
+    "  V extends ValidationOptions,",
+    "  R extends HandlerResponse<any>,",
+    ">(",
+    "  input:",
+    "    | Handler<App, Path, {}, R>",
+    "    | EndpointOptions<M, V, R>,",
+    "): readonly Handler<App, Path, any, any>[] {",
+    '  if (typeof input === "function") {',
+    "    return [input];",
+    "  }",
+    "",
+    "  return [",
+    "    ...(input.middleware ?? []),",
+    renderValidationCalls(),
+    "    input.handler,",
+    "  ];",
+    "}",
+    "",
+  ]
+    .join("\n")
+    .replace("import type App", "import type App");
 };
 
 export const generateRouterModule = (
@@ -73,10 +157,6 @@ export const generateRouterModule = (
   const moduleId = `${plan.outputRoot}/${routerPath}.ts`;
 
   const typesModuleId = `${plan.outputRoot}/types.ts`;
-
-  const blocks = routes.map((route) =>
-    renderMethod(route, moduleId, typesModuleId)
-  );
 
   return {
     code: [
@@ -91,8 +171,7 @@ export const generateRouterModule = (
         relativeModuleSpecifier(moduleId, typesModuleId)
       )};`,
       "",
-      ...blocks,
-      "",
+      ...routes.map((route) => renderMethod(route, moduleId, typesModuleId)),
     ].join("\n"),
     id: moduleId,
     kind: "router",
