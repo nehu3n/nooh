@@ -58,17 +58,25 @@ export const generateGroupModule = (
     );
   });
 
-  const chain = ["const route = new Hono<App>()"];
+  const chain = [
+    "const route = new Hono<App>();",
+    "",
+    "const register = route.get as unknown as (",
+    "  path: string,",
+    "  ...handlers: any[]",
+    ") => typeof route;",
+    "",
+  ];
 
   routes.forEach((route, index) => {
     chain.push(
-      `  .${route.method}(${JSON.stringify(
+      `register(${JSON.stringify(
         ensureLeadingSlash(route.localPath)
-      )}, ...endpoint${index})`
+      )}, ...endpoint${index});`
     );
   });
 
-  chain.push(";", "", "export default route;", "");
+  chain.push("", "export default route;", "");
 
   return {
     code: [...imports, "", ...chain].join("\n"),

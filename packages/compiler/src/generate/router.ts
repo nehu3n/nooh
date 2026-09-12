@@ -4,7 +4,7 @@ import type {
   ProjectModel,
   RouteModel,
 } from "@/types";
-import { relativeModuleSpecifier } from "@/utils/path";
+import { ensureLeadingSlash, relativeModuleSpecifier } from "@/utils/path";
 
 const VALIDATION_TARGETS = [
   "json",
@@ -25,7 +25,7 @@ const getRoutesForRouter = (
 
 const renderMethod = (route: RouteModel): string => {
   const { method } = route;
-  const path = JSON.stringify(route.fullPath);
+  const path = JSON.stringify(ensureLeadingSlash(route.localPath));
 
   return [
     `type Path = ${path};`,
@@ -60,12 +60,7 @@ const renderMethod = (route: RouteModel): string => {
     ),
     ";",
     "",
-    "type ValidationHandlers<V extends ValidationOptions> = [",
-    ...VALIDATION_TARGETS.map(
-      (target) =>
-        `  ...(V extends { readonly ${target}: infer Schema extends StandardSchema } ? [ValidationHandler<${JSON.stringify(target)}, Schema>] : []),`
-    ),
-    "];",
+    "type RouteHandler = Handler<App, Path, any, any>;",
     "",
     "type EndpointOptions<",
     "  M extends readonly RouteMiddleware[],",
@@ -79,7 +74,7 @@ const renderMethod = (route: RouteModel): string => {
     "",
     `export function ${method}<H extends Handler<App, Path>>(`,
     "  handler: H,",
-    "): readonly [H];",
+    "): readonly RouteHandler[];",
     "",
     `export function ${method}<`,
     "  M extends readonly RouteMiddleware[],",
@@ -87,11 +82,7 @@ const renderMethod = (route: RouteModel): string => {
     "  H extends Handler<App, Path, ValidationInput<V>>,",
     ">(",
     "  options: EndpointOptions<M, V, H>,",
-    "): readonly [",
-    "  ...M,",
-    "  ...ValidationHandlers<V>,",
-    "  H,",
-    "];",
+    "): readonly RouteHandler[];",
     "",
     `export function ${method}<`,
     "  M extends readonly RouteMiddleware[],",
@@ -103,22 +94,18 @@ const renderMethod = (route: RouteModel): string => {
     "    | EndpointOptions<M, V, H>,",
     "): readonly RouteHandler[] {",
     '  if (typeof input === "function") {',
-    "    return [input];",
+    "    return [input as RouteHandler];",
     "  }",
     "",
     "  return [",
-    "    ...(input.middleware ?? []),",
+    "    ...(input.middleware ?? []) as readonly RouteHandler[],",
     ...VALIDATION_TARGETS.map(
       (target) =>
-        `    ...(input.validation?.${target} !== undefined ? [sValidator(${JSON.stringify(target)}, input.validation.${target})] : []),`
+        `    ...(input.validation?.${target} !== undefined ? [sValidator(${JSON.stringify(target)}, input.validation.${target}) as RouteHandler] : []),`
     ),
-    "    input.handler,",
+    "    input.handler as RouteHandler,",
     "  ];",
     "}",
-    "",
-    "type RouteHandler =",
-    "  | Handler<App, Path, any, any>",
-    "  | MiddlewareHandler<App, Path>;",
     "",
   ].join("\n");
 };
