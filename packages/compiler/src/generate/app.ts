@@ -17,15 +17,15 @@ export const generateAppModule = (
     )};`,
   ];
 
-  for (const [index, group] of model.groups.entries()) {
+  model.groups.forEach((group, index) => {
     imports.push(
       `import group${index} from ${JSON.stringify(
         relativeModuleSpecifier(moduleId, groupModuleId(plan, group.id))
       )};`
     );
-  }
+  });
 
-  const chain = ["", "const app = new Hono<App>()"];
+  const chain = ["const app = new Hono<App>()"];
 
   model.groups.forEach((group, index) => {
     chain.push(`  .route(${JSON.stringify(group.path)}, group${index})`);
@@ -41,7 +41,7 @@ export const generateAppModule = (
   );
 
   return {
-    code: [...imports, ...chain].join("\n"),
+    code: [...imports, "", ...chain].join("\n"),
     id: moduleId,
     kind: "app",
   };

@@ -9,8 +9,6 @@ import type {
 } from "@/types";
 import { relativeModuleSpecifier } from "@/utils/path";
 
-const methodExpression = (method: RouteModel["method"]): string => method;
-
 const getGroupRoutes = (
   model: ProjectModel,
   group: RouteGroup
@@ -45,31 +43,27 @@ export const generateGroupModule = (
   const typesModuleId = `${plan.outputRoot}/types.ts`;
   const routes = getGroupRoutes(model, group);
 
-  const imports: string[] = [
+  const imports = [
     `import { Hono } from "hono";`,
     `import type { App } from ${JSON.stringify(
       relativeModuleSpecifier(moduleId, typesModuleId)
     )};`,
   ];
 
-  const endpointImports: string[] = [];
-
   routes.forEach((route, index) => {
-    const importName = `endpoint${index}`;
-
-    endpointImports.push(
-      `import ${importName} from ${JSON.stringify(
+    imports.push(
+      `import endpoint${index} from ${JSON.stringify(
         relativeModuleSpecifier(moduleId, route.source)
       )};`
     );
   });
 
-  const chain: string[] = ["", "const route = new Hono<App>()"];
+  const chain = ["const route = new Hono<App>()"];
 
   routes.forEach((route, index) => {
     chain.push(
-      `  .${methodExpression(route.method)}(${JSON.stringify(
-        route.localPath
+      `  .${route.method}(${JSON.stringify(
+        route.localPath || "/"
       )}, ...endpoint${index})`
     );
   });
@@ -77,7 +71,7 @@ export const generateGroupModule = (
   chain.push(";", "", "export default route;", "");
 
   return {
-    code: [...imports, ...endpointImports, ...chain].join("\n"),
+    code: [...imports, "", ...chain].join("\n"),
     id: moduleId,
     kind: "group",
   };
