@@ -1,4 +1,4 @@
-import { config, type NoohConfig } from "nooh";
+import { config } from "nooh";
 
 interface App {
   Variables: {
@@ -8,4 +8,4 @@ interface App {
 
 export default config<App>({
   routes: "src/routes",
-}) satisfies NoohConfig<App> as NoohConfig<App>;
+});

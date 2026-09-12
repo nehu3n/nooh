@@ -1,4 +1,4 @@
-import { middleware } from "@router/middleware/logger";
+import { middleware } from "@router/middleware";
 
 export default middleware(async (c, next) => {
   const start = Date.now();
