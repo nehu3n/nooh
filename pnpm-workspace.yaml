@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+
+allowBuilds:
+  lefthook: false
+
+catalog:
+  tsdown: ^0.23.0
+  typescript: ^7.0.2

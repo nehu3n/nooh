@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    {
+      "path": "./packages/compiler"
+    },
+    {
+      "path": "./packages/cli"
+    },
+    {
+      "path": "./packages/unplugin"
+    }
+  ],
+  "compilerOptions": {
+    "strictNullChecks": true
+  }
+}
