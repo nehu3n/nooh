@@ -1,7 +1,7 @@
 {
   "name": "@nooh-ts/compiler",
   "version": "0.0.0",
-  "private": true,
+  "private": false,
   "type": "module",
   "exports": {
     ".": {
@@ -20,12 +20,8 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "hono": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "peerDependencies": {
-    "hono": "catalog:"
   }
 }
