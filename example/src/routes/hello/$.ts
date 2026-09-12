@@ -1,5 +1,6 @@
 import logger from "@middleware/logger";
+import { group } from "nooh";
 
-export default {
+export default group({
   middleware: [logger],
-};
+});
