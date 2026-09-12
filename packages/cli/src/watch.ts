@@ -1,7 +1,9 @@
+/** biome-ignore-all lint/complexity/noVoid: ... */
 import { watch as watchFs } from "node:fs";
 
 import { runBuild } from "@/commands/build";
 import { discoverProject } from "@/project";
+import { ui } from "@/ui";
 
 export interface WatchOptions {
   readonly onBuild?: (success: boolean) => void | Promise<void>;
@@ -23,34 +25,49 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
     building = true;
 
     try {
-      const success = await runBuild();
+      const result = await runBuild();
 
-      await options.onBuild?.(success);
+      await options.onBuild?.(result.success);
     } finally {
       building = false;
 
       if (pending) {
         pending = false;
-        await rebuild();
+
+        void rebuild();
       }
     }
   };
 
-  const schedule = (): void => {
+  const schedule = (filename?: string | Buffer): void => {
     if (timer !== undefined) {
       clearTimeout(timer);
     }
 
     timer = setTimeout(() => {
       timer = undefined;
-      // biome-ignore lint/complexity/noVoid: ...
+
+      if (filename !== undefined) {
+        console.log(
+          `${ui.dim(ui.timestamp())} ${ui.changed(
+            `changed ${filename.toString()}`
+          )}`
+        );
+      }
+
       void rebuild();
     }, 100);
   };
 
-  const watcher = watchFs(`${project.root}/src`, { recursive: true }, () => {
-    schedule();
-  });
+  const watcher = watchFs(
+    `${project.root}/src`,
+    {
+      recursive: true,
+    },
+    (_event, filename) => {
+      schedule(filename ?? undefined);
+    }
+  );
 
   const close = (): void => {
     watcher.close();
@@ -64,5 +81,9 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
   process.once("SIGINT", close);
   process.once("SIGTERM", close);
 
+  ui.title("watching src/");
+
   await rebuild();
+
+  console.log(ui.dim("  watching for changes..."));
 };

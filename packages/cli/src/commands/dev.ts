@@ -4,6 +4,7 @@ import { type ChildProcess, spawn } from "node:child_process";
 import { runBuild } from "@/commands/build";
 
 import { discoverProject } from "@/project";
+import { ui } from "@/ui";
 import { watch } from "@/watch";
 
 const stopProcess = async (child: ChildProcess): Promise<void> => {
@@ -37,7 +38,10 @@ export const runDev = async (args: readonly string[]): Promise<void> => {
   }
 
   if (command.length === 0) {
-    console.error("Usage: nooh dev -- <command> [args...]");
+    ui.error("missing development command");
+
+    console.error();
+    console.error(`  ${ui.dim("usage:")} nooh dev -- <command> [args...]`);
 
     process.exitCode = 1;
     return;
@@ -45,9 +49,11 @@ export const runDev = async (args: readonly string[]): Promise<void> => {
 
   const project = await discoverProject();
 
+  ui.title("dev server");
+
   const initialBuild = await runBuild();
 
-  if (!initialBuild) {
+  if (!initialBuild.success) {
     process.exitCode = 1;
     return;
   }
@@ -61,6 +67,8 @@ export const runDev = async (args: readonly string[]): Promise<void> => {
       return;
     }
 
+    console.log(ui.info(`${executable} ${commandArgs.join(" ")}`));
+
     child = spawn(executable, commandArgs, {
       cwd: project.root,
       shell: false,
@@ -68,12 +76,14 @@ export const runDev = async (args: readonly string[]): Promise<void> => {
     });
 
     child.once("error", (error) => {
-      console.error(`Failed to start dev process: ${error.message}`);
+      ui.error(`failed to start dev process: ${error.message}`);
     });
   };
 
   const restart = async (): Promise<void> => {
     if (child) {
+      console.log(ui.changed("restarting dev server"));
+
       await stopProcess(child);
       child = undefined;
     }
@@ -99,6 +109,8 @@ export const runDev = async (args: readonly string[]): Promise<void> => {
   });
 
   start();
+
+  console.log();
 
   await watch({
     onBuild: async (success) => {

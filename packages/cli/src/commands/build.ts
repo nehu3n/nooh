@@ -8,8 +8,19 @@ import {
 
 import { writeOutput } from "@/output";
 import { discoverProject } from "@/project";
+import { ui } from "@/ui";
 
-export const runBuild = async (): Promise<boolean> => {
+export interface BuildResult {
+  readonly duration: number;
+  readonly modules: number;
+  readonly success: boolean;
+}
+
+export const runBuild = async (
+  options: { readonly quiet?: boolean } = {}
+): Promise<BuildResult> => {
+  const startedAt = performance.now();
+
   const project = await discoverProject();
 
   const files: SourceFile[] = await Promise.all(
@@ -39,21 +50,57 @@ export const runBuild = async (): Promise<boolean> => {
   });
 
   for (const diagnostic of result.diagnostics) {
-    const prefix =
-      diagnostic.severity === "error" ? "error" : diagnostic.severity;
+    const location = diagnostic.file ? `${ui.dim(diagnostic.file)}: ` : "";
 
-    const file = diagnostic.file ? `${diagnostic.file}: ` : "";
-
-    console.error(`[${prefix}] ${file}${diagnostic.message}`);
+    if (diagnostic.severity === "error") {
+      ui.error(`${location}${diagnostic.message}`);
+    } else if (diagnostic.severity === "warning") {
+      console.error(`${ui.warning(location)}${diagnostic.message}`);
+    } else {
+      console.log(`${ui.info(location)}${diagnostic.message}`);
+    }
   }
+
+  const duration = performance.now() - startedAt;
 
   if (!result.output) {
-    return false;
+    if (!options.quiet) {
+      console.error();
+      console.error(ui.error(`build failed in ${ui.duration(duration)}`));
+    }
+
+    return {
+      duration,
+      modules: 0,
+      success: false,
+    };
   }
 
-  await writeOutput(project.root, result.output);
+  const written = await writeOutput(project.root, result.output);
 
-  console.log(`Generated ${result.output.modules.length} modules in .nooh`);
+  if (!options.quiet) {
+    console.log(
+      ui.success(
+        `generated ${ui.bold(
+          `${result.output.modules.length}`
+        )} modules in ${ui.duration(duration)}`
+      )
+    );
 
-  return true;
+    if (written.removed > 0) {
+      console.log(
+        ui.dim(
+          `  ${written.removed} stale module${
+            written.removed === 1 ? "" : "s"
+          } removed`
+        )
+      );
+    }
+  }
+
+  return {
+    duration,
+    modules: result.output.modules.length,
+    success: true,
+  };
 };

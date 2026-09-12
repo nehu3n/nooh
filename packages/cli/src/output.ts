@@ -10,6 +10,12 @@ interface OutputManifest {
   readonly modules: readonly string[];
 }
 
+export interface WriteOutputResult {
+  readonly added: number;
+  readonly changed: number;
+  readonly removed: number;
+}
+
 const readManifest = async (root: string): Promise<OutputManifest> => {
   const path = resolve(root, ".nooh", MANIFEST);
 
@@ -42,41 +48,66 @@ const readManifest = async (root: string): Promise<OutputManifest> => {
 export const writeOutput = async (
   root: string,
   output: GeneratedOutput
-): Promise<void> => {
-  const outputRoot = resolve(root, ".nooh");
-
+): Promise<WriteOutputResult> => {
   const previous = await readManifest(root);
-  const nextModules = new Set(output.modules.map((module) => module.id));
+
+  const previousModules = new Map(
+    previous.modules.map((module) => [module, true])
+  );
+  const nextModules = new Map(
+    output.modules.map((module) => [module.id, module.code])
+  );
+
+  let added = 0;
+  let changed = 0;
+  let removed = 0;
+
+  for (const module of output.modules) {
+    const path = resolve(root, module.id);
+    const existed = previousModules.has(module.id);
+
+    if (existed) {
+      changed += 1;
+    } else {
+      added += 1;
+    }
+
+    await mkdir(dirname(path), { recursive: true });
+    await writeFile(path, module.code);
+  }
 
   for (const module of previous.modules) {
     if (nextModules.has(module)) {
       continue;
     }
 
-    const path = resolve(root, module);
-
-    await rm(path, {
+    await rm(resolve(root, module), {
       force: true,
     });
+
+    removed += 1;
   }
 
-  for (const module of output.modules) {
-    const path = resolve(root, module.id);
-
-    await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, module.code);
-  }
+  const outputRoot = resolve(root, ".nooh");
 
   await mkdir(outputRoot, {
     recursive: true,
   });
 
-  const manifest: OutputManifest = {
-    modules: output.modules.map((module) => module.id),
-  };
-
   await writeFile(
     resolve(outputRoot, MANIFEST),
-    `${JSON.stringify(manifest, null, 2)}\n`
+    `${JSON.stringify(
+      {
+        modules: output.modules.map((module) => module.id),
+      } satisfies OutputManifest,
+      null,
+      2
+    )}\n`
   );
+
+  return {
+    added,
+    changed,
+    removed,
+  };
 };
