@@ -15,6 +15,17 @@ const VALIDATION_TARGETS = [
   "cookie",
 ] as const;
 
+const METHOD_FUNCTION_NAMES: Record<RouteModel["method"], string> = {
+  all: "all",
+  delete: "del",
+  get: "get",
+  head: "head",
+  options: "options",
+  patch: "patch",
+  post: "post",
+  put: "put",
+};
+
 const getRoutesForRouter = (
   model: ProjectModel,
   routerPath: string
@@ -25,6 +36,8 @@ const getRoutesForRouter = (
 
 const renderMethod = (route: RouteModel): string => {
   const { method } = route;
+  const functionName = METHOD_FUNCTION_NAMES[method];
+
   const path = JSON.stringify(ensureLeadingSlash(route.localPath));
 
   return [
@@ -72,11 +85,11 @@ const renderMethod = (route: RouteModel): string => {
     "  readonly handler: H;",
     "};",
     "",
-    `export function ${method}<H extends Handler<App, Path>>(`,
+    `export function ${functionName}<H extends Handler<App, Path>>(`,
     "  handler: H,",
     "): readonly RouteHandler[];",
     "",
-    `export function ${method}<`,
+    `export function ${functionName}<`,
     "  M extends readonly RouteMiddleware[],",
     "  V extends ValidationOptions,",
     "  H extends Handler<App, Path, ValidationInput<V>>,",
@@ -84,7 +97,7 @@ const renderMethod = (route: RouteModel): string => {
     "  options: EndpointOptions<M, V, H>,",
     "): readonly RouteHandler[];",
     "",
-    `export function ${method}<`,
+    `export function ${functionName}<`,
     "  M extends readonly RouteMiddleware[],",
     "  V extends ValidationOptions,",
     "  H extends Handler<App, Path, ValidationInput<V>>,",

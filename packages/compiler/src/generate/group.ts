@@ -34,6 +34,9 @@ const getGroupRoutes = (
     });
 };
 
+const capitalize = (value: string): string =>
+  value.charAt(0).toUpperCase() + value.slice(1);
+
 export const generateGroupModule = (
   plan: CompilationPlan,
   model: ProjectModel,
@@ -58,28 +61,48 @@ export const generateGroupModule = (
     );
   });
 
-  const chain = [
-    "const route = new Hono<App>();",
-    "",
-    "const register = route.get as unknown as (",
+  const methods = [...new Set(routes.map((route) => route.method))].sort();
+
+  const registerTypes = [
+    "type RouteRegister = (",
     "  path: string,",
-    "  ...handlers: any[]",
+    "  ...handlers: any[],",
     ") => typeof route;",
-    "",
   ];
 
-  routes.forEach((route, index) => {
-    chain.push(
-      `register(${JSON.stringify(
-        ensureLeadingSlash(route.localPath)
-      )}, ...endpoint${index});`
-    );
+  const registerDeclarations = methods.map((method) => {
+    const name = `register${capitalize(method)}`;
+
+    return [
+      `const ${name} = route.${method} as unknown as RouteRegister;`,
+    ].join("\n");
   });
 
-  chain.push("", "export default route;", "");
+  const registrations = routes.map((route, index) => {
+    const register = `register${capitalize(route.method)}`;
+
+    return `  ${register}(${JSON.stringify(
+      ensureLeadingSlash(route.localPath)
+    )}, ...endpoint${index});`;
+  });
+
+  const code = [
+    ...imports,
+    "",
+    "const route = new Hono<App>();",
+    "",
+    ...registerTypes,
+    "",
+    ...registerDeclarations,
+    "",
+    ...registrations,
+    "",
+    "export default route;",
+    "",
+  ].join("\n");
 
   return {
-    code: [...imports, "", ...chain].join("\n"),
+    code,
     id: moduleId,
     kind: "group",
   };
