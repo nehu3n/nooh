@@ -1,5 +1,6 @@
 import { generateAppModule } from "@/generate/app";
 import { generateGroupModule } from "@/generate/group";
+import { generateMiddlewareModule } from "@/generate/middleware";
 import { generateRouterModule } from "@/generate/router";
 import { generateTypesModule } from "@/generate/types";
 
@@ -16,9 +17,9 @@ export const generate = (
 ): GeneratedOutput => {
   const modules: GeneratedModule[] = [];
 
-  const typesModule = generateTypesModule(plan, model.config);
+  modules.push(generateTypesModule(plan, model.config));
 
-  modules.push(typesModule);
+  modules.push(generateMiddlewareModule(plan));
 
   const routerPaths = [
     ...new Set(model.routes.map((route) => route.routerPath)),

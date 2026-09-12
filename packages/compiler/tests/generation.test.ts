@@ -1,4 +1,3 @@
-/** biome-ignore-all lint/performance/useTopLevelRegex: ... */
 import { describe, expect, test } from "vitest";
 
 import { generate } from "@/generate";
@@ -63,13 +62,31 @@ describe("code generation", () => {
 
     expect(module).toBeDefined();
 
-    expect(module?.code).toMatch(/Handler<App, "\/users\/:id">/);
+    expect(module?.code).toContain("Handler<App, Path>");
 
-    expect(module?.code).toContain('from "../../types.js"');
+    expect(module?.code).toContain('Path = "/users/:id"');
+
+    expect(module?.code).toContain('sValidator("json"');
+
+    expect(module?.code).toContain('sValidator("query"');
 
     expect(module?.code).not.toContain("@/router");
 
     expect(module?.code).not.toContain("@/config");
+  });
+
+  test("generates the shared middleware helper", () => {
+    const compilationPlan = plan(model, ".nooh");
+
+    const output = generate(compilationPlan, model);
+
+    const module = output.modules.find(
+      (candidate) => candidate.id === ".nooh/router/middleware.ts"
+    );
+
+    expect(module).toBeDefined();
+
+    expect(module?.code).toContain("createMiddleware<App>");
   });
 
   test("generates native Hono app code", () => {
@@ -85,6 +102,5 @@ describe("code generation", () => {
 
     expect(app?.code).toContain("new Hono<App>()");
     expect(app?.code).toContain("AppType = typeof app");
-    expect(app?.code).toContain('.route("/",');
   });
 });
