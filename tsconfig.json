@@ -9,7 +9,7 @@
       "path": "./packages/cli"
     },
     {
-      "path": "./packages/unplugin"
+      "path": "./packages/plugin"
     },
     {
       "path": "./packages/nooh"
