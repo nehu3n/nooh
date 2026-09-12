@@ -1,36 +1,28 @@
-import { access } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const exists = async (path: string): Promise<boolean> => {
+const isFile = async (path: string): Promise<boolean> => {
   try {
-    await access(path);
-    return true;
+    return (await stat(path)).isFile();
   } catch {
     return false;
   }
 };
 
 const resolveSource = async (path: string): Promise<string | null> => {
-  if (await exists(path)) {
-    return path;
-  }
+  const candidates = [
+    `${path}.ts`,
+    `${path}.tsx`,
+    resolve(path, "index.ts"),
+    resolve(path, "index.tsx"),
+    path,
+  ];
 
-  const ts = `${path}.ts`;
-
-  if (await exists(ts)) {
-    return ts;
-  }
-
-  const tsx = `${path}.tsx`;
-
-  if (await exists(tsx)) {
-    return tsx;
-  }
-
-  const index = resolve(path, "index.ts");
-
-  if (await exists(index)) {
-    return index;
+  for (const candidate of candidates) {
+    // biome-ignore lint/performance/noAwaitInLoops: ...
+    if (await isFile(candidate)) {
+      return candidate;
+    }
   }
 
   return null;

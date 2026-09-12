@@ -66,7 +66,7 @@ export const generateGroupModule = (
   const registerTypes = [
     "type RouteRegister = (",
     "  path: string,",
-    "  ...handlers: any[],",
+    "  ...handlers: any[]",
     ") => typeof route;",
   ];
 
