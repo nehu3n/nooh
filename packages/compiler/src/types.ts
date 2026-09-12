@@ -36,7 +36,7 @@ export interface CompileInput {
 }
 
 export interface RuntimeConfig {
-  readonly routes?: string;
+  readonly routes?: string | undefined;
 }
 
 export interface LoadedConfig {
