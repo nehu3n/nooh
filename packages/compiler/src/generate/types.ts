@@ -1,5 +1,5 @@
-import { relativeModuleSpecifier } from "@/path";
 import type { CompilationPlan, GeneratedModule, LoadedConfig } from "@/types";
+import { relativeModuleSpecifier } from "@/utils/path";
 
 export const generateTypesModule = (
   plan: CompilationPlan,

@@ -1,20 +1,22 @@
 /** biome-ignore-all lint/performance/noBarrelFile: ... */
 
-export { analyze } from "@/analyze";
 export { compile } from "@/compile";
 export { createCompiler } from "@/compiler";
-export { loadConfig } from "@/config";
 export { diff } from "@/diff";
-export { discover } from "@/discover";
 export { generate } from "@/generate";
-export { parse } from "@/parse";
-export { plan } from "@/plan";
+export { analyze } from "@/pipeline/analyze";
+export { loadConfig } from "@/pipeline/config";
+export { discover } from "@/pipeline/discover";
+export { parse } from "@/pipeline/parse";
+export { plan } from "@/pipeline/plan";
 export { recompile } from "@/recompile";
+
 export type {
   Compilation,
   CompilationPlan,
   CompileInput,
   CompileOptions,
+  ConfigLoadResult,
   Diagnostic,
   DiscoveredEndpoint,
   DiscoveredProject,

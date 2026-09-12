@@ -1,10 +1,10 @@
-import { relativeModuleSpecifier } from "@/path";
 import type {
   CompilationPlan,
   GeneratedModule,
   ProjectModel,
   RouteModel,
 } from "@/types";
+import { relativeModuleSpecifier } from "@/utils/path";
 
 const methodExportName = (method: RouteModel["method"]): string =>
   method === "delete" ? "del" : method;

@@ -1,5 +1,5 @@
-import { normalizePath } from "@/path";
 import type { CompilationPlan, ModulePlan, ProjectModel } from "@/types";
+import { normalizePath } from "@/utils/path";
 
 const DEFAULT_OUTPUT_ROOT = ".nooh";
 

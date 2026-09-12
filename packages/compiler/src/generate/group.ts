@@ -1,4 +1,5 @@
-import { relativeModuleSpecifier } from "@/path";
+import { groupModuleId } from "@/generate/utils";
+
 import type {
   CompilationPlan,
   GeneratedModule,
@@ -6,6 +7,7 @@ import type {
   RouteGroup,
   RouteModel,
 } from "@/types";
+import { relativeModuleSpecifier } from "@/utils/path";
 
 const methodExpression = (method: RouteModel["method"]): string => method;
 
@@ -34,20 +36,12 @@ const getGroupRoutes = (
     });
 };
 
-const groupModuleId = (plan: CompilationPlan, group: RouteGroup): string => {
-  if (group.id === "root") {
-    return `${plan.outputRoot}/groups/root.ts`;
-  }
-
-  return `${plan.outputRoot}/groups/${group.id}.ts`;
-};
-
 export const generateGroupModule = (
   plan: CompilationPlan,
   model: ProjectModel,
   group: RouteGroup
 ): GeneratedModule => {
-  const moduleId = groupModuleId(plan, group);
+  const moduleId = groupModuleId(plan, group.id);
   const typesModuleId = `${plan.outputRoot}/types.ts`;
   const routes = getGroupRoutes(model, group);
 

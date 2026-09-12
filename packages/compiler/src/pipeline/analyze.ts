@@ -1,4 +1,3 @@
-import { ensureLeadingSlash, normalizePath } from "@/path";
 import type {
   Diagnostic,
   LoadedConfig,
@@ -9,6 +8,7 @@ import type {
   RouteModel,
   RouteSegment,
 } from "@/types";
+import { ensureLeadingSlash, normalizePath } from "@/utils/path";
 
 const segmentToHono = (segment: RouteSegment): string => {
   // biome-ignore lint/style/useDefaultSwitchClause: ...

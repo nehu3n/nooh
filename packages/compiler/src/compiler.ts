@@ -1,9 +1,9 @@
-import { analyze } from "@/analyze";
-import { loadConfig } from "@/config";
-import { discover } from "@/discover";
 import { generate } from "@/generate";
-import { parse } from "@/parse";
-import { plan } from "@/plan";
+import { analyze } from "@/pipeline/analyze";
+import { loadConfig } from "@/pipeline/config";
+import { discover } from "@/pipeline/discover";
+import { parse } from "@/pipeline/parse";
+import { plan } from "@/pipeline/plan";
 
 import type { NoohCompiler } from "@/types";
 

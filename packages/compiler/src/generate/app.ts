@@ -1,13 +1,7 @@
-import { relativeModuleSpecifier } from "@/path";
+import { groupModuleId } from "@/generate/utils";
+
 import type { CompilationPlan, GeneratedModule, ProjectModel } from "@/types";
-
-const groupModuleId = (plan: CompilationPlan, groupId: string): string => {
-  if (groupId === "root") {
-    return `${plan.outputRoot}/groups/root.ts`;
-  }
-
-  return `${plan.outputRoot}/groups/${groupId}.ts`;
-};
+import { relativeModuleSpecifier } from "@/utils/path";
 
 export const generateAppModule = (
   plan: CompilationPlan,

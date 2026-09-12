@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
-import { discover } from "@/discover";
-import { parse } from "@/parse";
+import { discover } from "@/pipeline/discover";
+import { parse } from "@/pipeline/parse";
 
 const config = {
   routesRoot: "src/routes",

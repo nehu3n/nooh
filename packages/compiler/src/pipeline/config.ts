@@ -1,10 +1,5 @@
-import { normalizePath } from "@/path";
-import type {
-  CompileInput,
-  Diagnostic,
-  LoadedConfig,
-  RuntimeConfig,
-} from "@/types";
+import type { CompileInput, ConfigLoadResult, RuntimeConfig } from "@/types";
+import { normalizePath } from "@/utils/path";
 
 const DEFAULT_ROUTES_ROOT = "src/routes";
 
@@ -12,11 +7,6 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const isString = (value: unknown): value is string => typeof value === "string";
-
-export interface ConfigLoadResult {
-  readonly config?: LoadedConfig;
-  readonly diagnostics: readonly Diagnostic[];
-}
 
 export const loadConfig = async (
   input: CompileInput

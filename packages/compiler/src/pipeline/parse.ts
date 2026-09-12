@@ -1,4 +1,4 @@
-import { parseEndpoint } from "@/route-parser";
+import { parseEndpoint } from "@/pipeline/route-parser";
 import type {
   Diagnostic,
   DiscoveredProject,

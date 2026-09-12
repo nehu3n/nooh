@@ -1,7 +1,7 @@
-import { generateAppModule } from "@/generate-app";
-import { generateGroupModule } from "@/generate-group";
-import { generateRouterModule } from "@/generate-router";
-import { generateTypesModule } from "@/generate-types";
+import { generateAppModule } from "@/generate/app";
+import { generateGroupModule } from "@/generate/group";
+import { generateRouterModule } from "@/generate/router";
+import { generateTypesModule } from "@/generate/types";
 
 import type {
   CompilationPlan,

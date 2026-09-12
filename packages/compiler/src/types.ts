@@ -45,6 +45,11 @@ export interface LoadedConfig {
   readonly value: RuntimeConfig;
 }
 
+export interface ConfigLoadResult {
+  readonly config?: LoadedConfig;
+  readonly diagnostics: readonly Diagnostic[];
+}
+
 export interface DiscoveredEndpoint {
   readonly endpointsRoot: string;
   readonly groupPath: string;

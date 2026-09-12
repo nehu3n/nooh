@@ -2,7 +2,7 @@
 import { describe, expect, test } from "vitest";
 
 import { generate } from "@/generate";
-import { plan } from "@/plan";
+import { plan } from "@/pipeline/plan";
 
 const model = {
   config: {

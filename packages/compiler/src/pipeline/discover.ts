@@ -1,4 +1,3 @@
-import { isPathInside, normalizePath, relativePath } from "@/path";
 import type {
   DiscoveredEndpoint,
   DiscoveredProject,
@@ -6,6 +5,7 @@ import type {
   SourceFile,
   SourceSnapshot,
 } from "@/types";
+import { isPathInside, normalizePath, relativePath } from "@/utils/path";
 
 const isTypeScriptFile = (file: SourceFile): boolean =>
   file.path.endsWith(".ts") || file.path.endsWith(".tsx");

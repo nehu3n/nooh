@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
-import { analyze } from "@/analyze";
-import { parseEndpoint } from "@/route-parser";
+import { analyze } from "@/pipeline/analyze";
+import { parseEndpoint } from "@/pipeline/route-parser";
 
 const endpoint = (localPath: string, groupPath = "") => ({
   endpointsRoot: `src/routes/${groupPath ? `${groupPath}/` : ""}endpoints`,

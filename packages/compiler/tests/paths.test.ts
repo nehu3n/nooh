@@ -5,7 +5,7 @@ import {
   ensureLeadingSlash,
   normalizePath,
   relativeModuleSpecifier,
-} from "@/path";
+} from "@/utils/path";
 
 describe("path utilities", () => {
   test("normalizes filesystem separators", () => {

@@ -1,4 +1,3 @@
-import { normalizePath } from "@/path";
 import type {
   Diagnostic,
   DiscoveredEndpoint,
@@ -6,6 +5,7 @@ import type {
   RouteSegment,
 } from "@/types";
 import { ROUTE_METHODS } from "@/types";
+import { normalizePath } from "@/utils/path";
 
 const METHOD_PATTERN =
   /^(.*)\.(get|post|put|patch|delete|options|head|all)\.(?:ts|tsx)$/;
