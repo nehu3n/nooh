@@ -6,6 +6,9 @@ settings:
 
 catalogs:
   default:
+    hono:
+      specifier: ^4.13.7
+      version: 4.13.7
     tsdown:
       specifier: ^0.23.0
       version: 0.23.0
@@ -44,6 +47,9 @@ importers:
 
   packages/compiler:
     devDependencies:
+      hono:
+        specifier: 'catalog:'
+        version: 4.13.7
       tsdown:
         specifier: 'catalog:'
         version: 0.23.0(typescript@7.0.2)
@@ -845,6 +851,10 @@ packages:
   global-directory@5.0.0:
     resolution: {integrity: sha512-1pgFdhK3J2LeM+dVf2Pd424yHx2ou338lC0ErNP2hPx4j8eW1Sp0XqSjNxtk6Tc4Kr5wlWtSvz8cn2yb7/SG/w==}
     engines: {node: '>=20'}
+
+  hono@4.13.7:
+    resolution: {integrity: sha512-c8/gF9ac8Y78/agExVocyLevgR+JlpNB444Py0FSX8pJoPdYUfUzRcXtYEYGwt6l19qIlVZPN5Mfsw9jFShmQQ==}
+    engines: {node: '>=16.9.0'}
 
   hookable@6.1.1:
     resolution: {integrity: sha512-U9LYDy1CwhMCnprUfeAZWZGByVbhd54hwepegYTK7Pi5NvqEj63ifz5z+xukznehT7i6NIZRu89Ay1AZmRsLEQ==}
@@ -1889,6 +1899,8 @@ snapshots:
   global-directory@5.0.0:
     dependencies:
       ini: 6.0.0
+
+  hono@4.13.7: {}
 
   hookable@6.1.1: {}
 
