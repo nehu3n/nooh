@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx src/index.ts",
+    "build": "nooh build",
+    "dev": "nooh dev -- tsx src/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -13,6 +14,7 @@
     "nooh": "workspace:*"
   },
   "devDependencies": {
+    "@nooh-ts/cli": "workspace:*",
     "tsx": "catalog:",
     "typescript": "catalog:"
   }
