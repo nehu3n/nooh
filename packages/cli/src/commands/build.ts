@@ -19,8 +19,6 @@ export const build = async (): Promise<boolean> => {
     }))
   );
 
-  console.log(files);
-
   const snapshot: SourceSnapshot = {
     files,
   };
@@ -36,6 +34,7 @@ export const build = async (): Promise<boolean> => {
     options: {
       outputRoot: ".nooh",
     },
+    root: project.root,
     sources: snapshot,
   });
 
@@ -43,7 +42,9 @@ export const build = async (): Promise<boolean> => {
     const prefix =
       diagnostic.severity === "error" ? "error" : diagnostic.severity;
 
-    console.error(`[${prefix}] ${diagnostic.message}`);
+    const file = diagnostic.file ? `${diagnostic.file}: ` : "";
+
+    console.error(`[${prefix}] ${file}${diagnostic.message}`);
   }
 
   if (!result.output) {

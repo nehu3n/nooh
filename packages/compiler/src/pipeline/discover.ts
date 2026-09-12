@@ -5,16 +5,31 @@ import type {
   SourceFile,
   SourceSnapshot,
 } from "@/types";
-import { isPathInside, normalizePath, relativePath } from "@/utils/path";
+import {
+  isPathInside,
+  normalizePath,
+  relativePath,
+  toProjectPath,
+} from "@/utils/path";
 
 const isTypeScriptFile = (file: SourceFile): boolean =>
   file.path.endsWith(".ts") || file.path.endsWith(".tsx");
 
 export const findEndpointsDirectory = (
   routesRoot: string,
-  filePath: string
+  filePath: string,
+  root = ""
 ): string | null => {
-  const relative = relativePath(routesRoot, filePath);
+  const normalizedRoutesRoot = toProjectPath(routesRoot, root);
+
+  const normalizedFilePath = toProjectPath(filePath, root);
+
+  if (!isPathInside(normalizedFilePath, normalizedRoutesRoot)) {
+    return null;
+  }
+
+  const relative = relativePath(normalizedRoutesRoot, normalizedFilePath);
+
   const parts = relative.split("/").filter(Boolean);
 
   const endpointIndex = parts.lastIndexOf("endpoints");
@@ -26,7 +41,7 @@ export const findEndpointsDirectory = (
   const groupParts = parts.slice(0, endpointIndex);
 
   return normalizePath(
-    [routesRoot, ...groupParts, "endpoints"].filter(Boolean).join("/")
+    [normalizedRoutesRoot, ...groupParts, "endpoints"].filter(Boolean).join("/")
   );
 };
 
@@ -34,7 +49,14 @@ const discoverEndpoint = (
   config: LoadedConfig,
   file: SourceFile
 ): DiscoveredEndpoint | null => {
-  const relative = relativePath(config.routesRoot, file.path);
+  const source = toProjectPath(file.path, config.root);
+
+  if (!isPathInside(source, config.routesRoot)) {
+    return null;
+  }
+
+  const relative = relativePath(config.routesRoot, source);
+
   const parts = relative.split("/").filter(Boolean);
 
   const endpointIndex = parts.lastIndexOf("endpoints");
@@ -58,7 +80,7 @@ const discoverEndpoint = (
     endpointsRoot,
     groupPath: normalizePath(groupParts.join("/")),
     localPath: normalizePath(localParts.join("/")),
-    source: normalizePath(file.path),
+    source,
   };
 };
 
@@ -69,13 +91,13 @@ export const discover = (
   const endpoints: DiscoveredEndpoint[] = [];
 
   for (const file of snapshot.files) {
-    const normalizedFile = normalizePath(file.path);
-
     if (!isTypeScriptFile(file)) {
       continue;
     }
 
-    if (!isPathInside(normalizedFile, config.routesRoot)) {
+    const source = toProjectPath(file.path, config.root);
+
+    if (!isPathInside(source, config.routesRoot)) {
       continue;
     }
 

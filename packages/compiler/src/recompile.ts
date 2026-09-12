@@ -9,7 +9,12 @@ export const recompile = (input: RecompileInput): Promise<Compilation> => {
   return compiler.compile({
     config,
     loader: input.loader,
-    ...(input.options !== undefined && { options: input.options }),
+    root: input.previous.model.config.root,
+
+    ...(input.options !== undefined && {
+      options: input.options,
+    }),
+
     sources: input.snapshot,
   });
 };

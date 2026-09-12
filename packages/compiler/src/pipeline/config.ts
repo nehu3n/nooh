@@ -1,5 +1,5 @@
 import type { CompileInput, ConfigLoadResult, RuntimeConfig } from "@/types";
-import { normalizePath } from "@/utils/path";
+import { normalizePath, toProjectPath } from "@/utils/path";
 
 const DEFAULT_ROUTES_ROOT = "src/routes";
 
@@ -59,14 +59,20 @@ export const loadConfig = async (
     };
   }
 
+  const root = normalizePath(input.root ?? "");
+  const source = toProjectPath(input.config, root);
+  const routes = routesValue ?? DEFAULT_ROUTES_ROOT;
+  const routesRoot = toProjectPath(routes, root);
+
   const value: RuntimeConfig = {
     routes: routesValue,
   };
 
   return {
     config: {
-      routesRoot: normalizePath(routesValue ?? DEFAULT_ROUTES_ROOT),
-      source: normalizePath(input.config),
+      root,
+      routesRoot,
+      source,
       value,
     },
     diagnostics: [],

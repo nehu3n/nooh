@@ -1,4 +1,5 @@
 import { generate } from "@/generate";
+
 import { analyze } from "@/pipeline/analyze";
 import { loadConfig } from "@/pipeline/config";
 import { discover } from "@/pipeline/discover";
@@ -18,6 +19,7 @@ export const createCompiler = (): NoohCompiler => ({
         diagnostics: configResult.diagnostics,
         model: {
           config: {
+            root: input.root ? input.root.replaceAll("\\", "/") : "",
             routesRoot: "",
             source: input.config,
             value: {},
@@ -61,11 +63,8 @@ export const createCompiler = (): NoohCompiler => ({
   },
 
   discover,
-
   generate,
   loadConfig,
-
   parse,
-
   plan,
 });

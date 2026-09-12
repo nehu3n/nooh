@@ -1,7 +1,28 @@
+const WINDOWS_DRIVE_REGEX = /^[A-Za-z]:\//;
+const LEADING_SLASH_REGEX = /^\/+/;
+const DRIVE_REGEX = /^([A-Za-z]):\//;
+
+export const isAbsolutePath = (value: string): boolean => {
+  const normalized = value.replaceAll("\\", "/");
+
+  return normalized.startsWith("/") || WINDOWS_DRIVE_REGEX.test(normalized);
+};
+
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ...
 export const normalizePath = (value: string): string => {
   const normalized = value.replaceAll("\\", "/");
 
-  const parts = normalized.split("/");
+  const isPosixAbsolute = normalized.startsWith("/");
+  const driveMatch = normalized.match(DRIVE_REGEX);
+
+  const body = driveMatch
+    ? normalized.slice(3)
+    : // biome-ignore lint/style/noNestedTernary: ...
+      isPosixAbsolute
+      ? normalized.slice(1)
+      : normalized;
+
+  const parts = body.split("/");
   const result: string[] = [];
 
   for (const part of parts) {
@@ -10,17 +31,31 @@ export const normalizePath = (value: string): string => {
     }
 
     if (part === "..") {
-      result.pop();
+      if (result.length > 0 && result.at(-1) !== "..") {
+        result.pop();
+      } else if (!(isPosixAbsolute || driveMatch)) {
+        result.push("..");
+      }
+
       continue;
     }
 
     result.push(part);
   }
 
-  return result.join("/");
+  const joined = result.join("/");
+
+  if (driveMatch) {
+    return joined ? `${driveMatch[1]}:/${joined}` : `${driveMatch[1]}:/`;
+  }
+
+  if (isPosixAbsolute) {
+    return joined ? `/${joined}` : "/";
+  }
+
+  return joined;
 };
 
-const LEADING_SLASH_REGEX = /^\/+/;
 export const stripLeadingSlash = (value: string): string =>
   value.replace(LEADING_SLASH_REGEX, "");
 
@@ -41,6 +76,10 @@ export const dirname = (value: string): string => {
 
   if (index === -1) {
     return "";
+  }
+
+  if (index === 0) {
+    return "/";
   }
 
   return normalized.slice(0, index);
@@ -77,6 +116,25 @@ export const relativePath = (from: string, to: string): string => {
   ];
 
   return result.join("/");
+};
+
+export const toProjectPath = (value: string, root: string): string => {
+  const normalizedValue = normalizePath(value);
+  const normalizedRoot = normalizePath(root);
+
+  if (!(normalizedRoot && isAbsolutePath(normalizedRoot))) {
+    return normalizedValue;
+  }
+
+  if (!isAbsolutePath(normalizedValue)) {
+    return normalizedValue;
+  }
+
+  if (!isPathInside(normalizedValue, normalizedRoot)) {
+    return normalizedValue;
+  }
+
+  return relativePath(normalizedRoot, normalizedValue);
 };
 
 export const relativeModuleSpecifier = (

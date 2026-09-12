@@ -32,6 +32,7 @@ export interface CompileInput {
   readonly config: string;
   readonly loader: ModuleLoader;
   readonly options?: CompileOptions;
+  readonly root?: string;
   readonly sources: SourceSnapshot;
 }
 
@@ -40,6 +41,7 @@ export interface RuntimeConfig {
 }
 
 export interface LoadedConfig {
+  readonly root: string;
   readonly routesRoot: string;
   readonly source: string;
   readonly value: RuntimeConfig;
