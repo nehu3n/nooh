@@ -1,8 +1,28 @@
 {
   "name": "@nooh-ts/plugin",
   "version": "0.0.0",
-  "private": false,
-  "sideEffects": false,
+  "description": "Bundler integrations for Nooh.",
+  "keywords": [
+    "nooh",
+    "hono",
+    "unplugin",
+    "vite",
+    "rollup",
+    "rolldown",
+    "webpack",
+    "rspack",
+    "esbuild"
+  ],
+  "homepage": "https://nooh-ts.pages.dev",
+  "bugs": {
+    "url": "https://github.com/nehu3n/nooh/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nehu3n/nooh.git",
+    "directory": "packages/plugin"
+  },
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
@@ -54,7 +74,6 @@
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
-    "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -63,9 +82,10 @@
     "unplugin": "^3.3.0"
   },
   "devDependencies": {
-    "@types/node": "catalog:",
     "tsdown": "catalog:",
-    "typescript": "catalog:",
-    "vitest": "catalog:"
+    "typescript": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

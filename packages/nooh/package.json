@@ -1,7 +1,24 @@
 {
   "name": "nooh",
   "version": "0.0.0",
-  "private": false,
+  "description": "🧊 A zero-dependency, compile-time metaframework for building type-safe file-based Hono APIs.",
+  "keywords": [
+    "nooh",
+    "hono",
+    "framework",
+    "typescript",
+    "routing"
+  ],
+  "homepage": "https://nooh-ts.pages.dev",
+  "bugs": {
+    "url": "https://github.com/nehu3n/nooh/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nehu3n/nooh.git",
+    "directory": "packages/nooh"
+  },
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
@@ -24,5 +41,8 @@
   },
   "peerDependencies": {
     "@hono/standard-validator": "^0.4.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

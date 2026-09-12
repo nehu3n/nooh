@@ -3,15 +3,21 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
     "check": "ultracite check",
     "dev": "turbo run dev --parallel",
     "fix": "ultracite fix",
     "prepare": "lefthook install",
+    "release": "changeset publish",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "version": "changeset version"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.12",
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.2",
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
     "lefthook": "^2.1.12",

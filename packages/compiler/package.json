@@ -1,7 +1,24 @@
 {
   "name": "@nooh-ts/compiler",
   "version": "0.0.0",
-  "private": false,
+  "description": "The compiler core for Nooh.",
+  "keywords": [
+    "nooh",
+    "hono",
+    "compiler",
+    "typescript",
+    "codegen"
+  ],
+  "homepage": "https://nooh-ts.pages.dev",
+  "bugs": {
+    "url": "https://github.com/nehu3n/nooh/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nehu3n/nooh.git",
+    "directory": "packages/compiler"
+  },
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
@@ -23,5 +40,8 @@
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
