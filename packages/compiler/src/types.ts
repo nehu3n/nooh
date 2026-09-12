@@ -150,3 +150,25 @@ export interface Compilation {
   readonly output: GeneratedOutput | null;
   readonly plan: CompilationPlan | null;
 }
+
+export interface NoohCompiler {
+  analyze: (
+    parsed: ParsedProject,
+    config: LoadedConfig
+  ) => {
+    model: ProjectModel;
+    diagnostics: readonly Diagnostic[];
+  };
+  compile: (input: CompileInput) => Promise<Compilation>;
+  discover: (
+    sources: CompileInput["sources"],
+    config: LoadedConfig
+  ) => DiscoveredProject;
+  generate: (plan: CompilationPlan, model: ProjectModel) => GeneratedOutput;
+  loadConfig: (input: CompileInput) => Promise<{
+    config?: LoadedConfig;
+    diagnostics: readonly Diagnostic[];
+  }>;
+  parse: (project: DiscoveredProject) => ParsedProject;
+  plan: (model: ProjectModel, outputRoot?: string) => CompilationPlan;
+}

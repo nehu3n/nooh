@@ -1,6 +1,7 @@
 /** biome-ignore-all lint/performance/noBarrelFile: ... */
 export { analyze } from "@/analyze";
 export { compile } from "@/compile";
+export { createCompiler } from "@/compiler";
 export { loadConfig } from "@/config";
 export { discover } from "@/discover";
 export { generate } from "@/generate";
@@ -21,6 +22,7 @@ export type {
   ModuleKind,
   ModuleLoader,
   ModulePlan,
+  NoohCompiler,
   ParsedProject,
   ParsedRoute,
   ProjectModel,
