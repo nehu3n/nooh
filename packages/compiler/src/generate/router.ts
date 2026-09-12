@@ -6,8 +6,14 @@ import type {
 } from "@/types";
 import { relativeModuleSpecifier } from "@/utils/path";
 
-const methodExportName = (method: RouteModel["method"]): string =>
-  method === "delete" ? "del" : method;
+const VALIDATION_TARGETS = [
+  "json",
+  "form",
+  "query",
+  "param",
+  "header",
+  "cookie",
+] as const;
 
 const getRoutesForRouter = (
   model: ProjectModel,
@@ -19,60 +25,41 @@ const getRoutesForRouter = (
 
 const renderMethod = (
   route: RouteModel,
-  moduleId: string,
-  typesModuleId: string
+  _moduleId: string,
+  _typesModuleId: string
 ): string => {
-  const name = methodExportName(route.method);
-
-  const typesImport = relativeModuleSpecifier(moduleId, typesModuleId);
-
-  const lines = [
-    `type RouteHandler = Handler<App, ${JSON.stringify(route.fullPath)}>;`,
-    `type RouteMiddleware = MiddlewareHandler<App, ${JSON.stringify(route.fullPath)}>;`,
-    "",
-    "type EndpointOptions<",
-    "  HandlerType extends RouteHandler,",
-    "  MiddlewareType extends readonly RouteMiddleware[],",
-    "> = {",
-    "  readonly middleware?: MiddlewareType;",
-    "  readonly handler: HandlerType;",
-    "};",
-    "",
-    `export function ${name}<HandlerType extends RouteHandler>(`,
-    "  handler: HandlerType,",
-    "): readonly [HandlerType];",
-    "",
-    `export function ${name}<`,
-    "  HandlerType extends RouteHandler,",
-    "  MiddlewareType extends readonly RouteMiddleware[],",
-    ">(",
-    "  options: EndpointOptions<HandlerType, MiddlewareType>,",
-    "): readonly [...MiddlewareType, HandlerType];",
-    "",
-    `export function ${name}<`,
-    "  HandlerType extends RouteHandler,",
-    "  MiddlewareType extends readonly RouteMiddleware[],",
-    ">(",
-    "  input:",
-    "    | HandlerType",
-    "    | EndpointOptions<HandlerType, MiddlewareType>,",
-    "): readonly [HandlerType] | readonly [...MiddlewareType, HandlerType] {",
-    '  if (typeof input === "function") {',
-    "    return [input];",
-    "  }",
-    "",
-    "  return [",
-    "    ...(input.middleware ?? []),",
-    "    input.handler,",
-    "  ] as readonly [...MiddlewareType, HandlerType];",
-    "}",
-  ];
+  const path = JSON.stringify(route.fullPath);
 
   return [
-    `import type { Handler, MiddlewareHandler } from "hono";`,
-    `import type { App } from ${JSON.stringify(typesImport)};`,
+    `type Path = ${path};`,
     "",
-    ...lines,
+    "type RouteHandler = Handler<App, Path>;",
+    "type RouteMiddleware = MiddlewareHandler<App, Path>;",
+    "",
+    "type ValidationTarget = Parameters<typeof sValidator>[0];",
+    "type StandardSchema = Parameters<typeof sValidator>[1];",
+    "",
+    "type ValidationOptions = Partial<",
+    "  Record<ValidationTarget, StandardSchema>",
+    ">;",
+    "",
+    "type HandlerInput<T> = T extends H<",
+    "  any,",
+    "  any,",
+    "  infer I,",
+    "  any",
+    "> ? I : never;",
+    "",
+    "type ValidationHandler<",
+    "  Target extends ValidationTarget,",
+    "  Schema extends StandardSchema,",
+    "> = ReturnType<",
+    "  typeof sValidator<Schema, Target, App, Path>",
+    ">;",
+    "",
+    "type ValidationInput<V extends ValidationOptions> =",
+    ...VALIDATION_TARGETS.map((target) => `  ${target} extends keyof V`),
+    "",
   ].join("\n");
 };
 
@@ -83,17 +70,30 @@ export const generateRouterModule = (
 ): GeneratedModule => {
   const routes = getRoutesForRouter(model, routerPath);
 
-  const relativeRouterPath = routerPath;
-  const moduleId = `${plan.outputRoot}/${relativeRouterPath}.ts`;
+  const moduleId = `${plan.outputRoot}/${routerPath}.ts`;
+
   const typesModuleId = `${plan.outputRoot}/types.ts`;
 
-  const code = [
-    ...routes.map((route) => renderMethod(route, moduleId, typesModuleId)),
-    "",
-  ].join("\n");
+  const blocks = routes.map((route) =>
+    renderMethod(route, moduleId, typesModuleId)
+  );
 
   return {
-    code,
+    code: [
+      `import { sValidator } from "@hono/standard-validator";`,
+      "import type {",
+      "  H,",
+      "  Handler,",
+      "  HandlerResponse,",
+      "  MiddlewareHandler,",
+      `} from "hono";`,
+      `import type { App } from ${JSON.stringify(
+        relativeModuleSpecifier(moduleId, typesModuleId)
+      )};`,
+      "",
+      ...blocks,
+      "",
+    ].join("\n"),
     id: moduleId,
     kind: "router",
   };

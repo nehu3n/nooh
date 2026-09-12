@@ -1,5 +1,5 @@
 {
-  "name": "nooh",
+  "name": "nooh-monorepo",
   "private": true,
   "scripts": {
     "build": "turbo run build",

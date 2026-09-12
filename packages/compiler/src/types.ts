@@ -125,7 +125,7 @@ export interface Diagnostic {
   readonly severity: DiagnosticSeverity;
 }
 
-export type ModuleKind = "types" | "router" | "group" | "app";
+export type ModuleKind = "types" | "router" | "middleware" | "group" | "app";
 
 export interface ModulePlan {
   readonly groupId?: string;
@@ -170,10 +170,7 @@ export interface NoohCompiler {
     config: LoadedConfig
   ) => DiscoveredProject;
   generate: (plan: CompilationPlan, model: ProjectModel) => GeneratedOutput;
-  loadConfig: (input: CompileInput) => Promise<{
-    config?: LoadedConfig;
-    diagnostics: readonly Diagnostic[];
-  }>;
+  loadConfig: (input: CompileInput) => Promise<ConfigLoadResult>;
   parse: (project: DiscoveredProject) => ParsedProject;
   plan: (model: ProjectModel, outputRoot?: string) => CompilationPlan;
 }

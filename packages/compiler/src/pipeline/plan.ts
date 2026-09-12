@@ -12,12 +12,16 @@ export const plan = (
 ): CompilationPlan => {
   const normalizedOutputRoot = normalizePath(outputRoot);
 
-  const modules: ModulePlan[] = [];
-
-  modules.push({
-    id: modulePath(normalizedOutputRoot, "types"),
-    kind: "types",
-  });
+  const modules: ModulePlan[] = [
+    {
+      id: modulePath(normalizedOutputRoot, "types"),
+      kind: "types",
+    },
+    {
+      id: modulePath(normalizedOutputRoot, "router/middleware"),
+      kind: "middleware",
+    },
+  ];
 
   const routerPaths = [
     ...new Set(model.routes.map((route) => route.routerPath)),
