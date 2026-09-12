@@ -1,12 +1,14 @@
-import tsconfigPaths from "vite-tsconfig-paths";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
+const src = fileURLToPath(new URL("./src", import.meta.url));
+
 export default defineConfig({
-  plugins: [
-    tsconfigPaths({
-      projectDiscovery: "lazy",
-    }),
-  ],
+  resolve: {
+    alias: {
+      "@": src,
+    },
+  },
 
   test: {
     environment: "node",

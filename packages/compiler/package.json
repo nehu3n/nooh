@@ -23,7 +23,6 @@
     "hono": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
-    "vite-tsconfig-paths": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {

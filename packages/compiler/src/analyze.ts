@@ -26,29 +26,29 @@ const segmentToHono = (segment: RouteSegment): string => {
 
 const segmentsToPath = (segments: readonly RouteSegment[]): string => {
   if (segments.length === 0) {
-    return "/";
+    return "";
   }
 
-  return `/${segments.map(segmentToHono).join("/")}`;
+  return segments.map(segmentToHono).join("/");
 };
 
 const combinePaths = (groupPath: string, localPath: string): string => {
-  const group = normalizePath(groupPath);
-  const local = normalizePath(localPath);
+  const group = normalizePath(groupPath).replace(/^\/+|\/+$/g, "");
+  const local = normalizePath(localPath).replace(/^\/+|\/+$/g, "");
 
-  if (!group && local === "/") {
+  if (!(group || local)) {
     return "/";
   }
 
   if (!group) {
-    return ensureLeadingSlash(local);
+    return `/${local}`;
   }
 
-  if (local === "/") {
-    return ensureLeadingSlash(group);
+  if (!local) {
+    return `/${group}`;
   }
 
-  return ensureLeadingSlash(`${group}/${local}`);
+  return `/${group}/${local}`;
 };
 
 const routeSegmentsToRouterPath = (
