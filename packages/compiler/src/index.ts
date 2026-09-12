@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/performance/noBarrelFile: ... */
+
 export { analyze } from "@/analyze";
 export { compile } from "@/compile";
 export { createCompiler } from "@/compiler";
@@ -8,7 +9,7 @@ export { discover } from "@/discover";
 export { generate } from "@/generate";
 export { parse } from "@/parse";
 export { plan } from "@/plan";
-
+export { recompile } from "@/recompile";
 export type {
   Compilation,
   CompilationPlan,
@@ -28,6 +29,7 @@ export type {
   ParsedProject,
   ParsedRoute,
   ProjectModel,
+  RecompileInput,
   RouteGroup,
   RouteMethod,
   RouteModel,

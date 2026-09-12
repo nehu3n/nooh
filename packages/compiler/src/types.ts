@@ -179,3 +179,11 @@ export interface OutputDiff {
   readonly removed: readonly string[];
   readonly unchanged: readonly GeneratedModule[];
 }
+
+export interface RecompileInput {
+  readonly config?: string;
+  readonly loader: CompileInput["loader"];
+  readonly options?: CompileInput["options"];
+  readonly previous: Compilation;
+  readonly snapshot: SourceSnapshot;
+}
