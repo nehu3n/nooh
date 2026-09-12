@@ -10,38 +10,37 @@ export const generateAppModule = (
   const moduleId = `${plan.outputRoot}/app.ts`;
   const typesModuleId = `${plan.outputRoot}/types.ts`;
 
+  const root = model.groups.find((group) => group.id === "root");
+
+  if (!root) {
+    throw new Error("Nooh compilation requires a root route group.");
+  }
+
   const imports = [
     `import { Hono } from "hono";`,
     `import type { App } from ${JSON.stringify(
       relativeModuleSpecifier(moduleId, typesModuleId)
     )};`,
+    `import root from ${JSON.stringify(
+      relativeModuleSpecifier(moduleId, groupModuleId(plan, root.id))
+    )};`,
   ];
 
-  model.groups.forEach((group, index) => {
-    imports.push(
-      `import group${index} from ${JSON.stringify(
-        relativeModuleSpecifier(moduleId, groupModuleId(plan, group.id))
-      )};`
-    );
-  });
-
-  const chain = ["const app = new Hono<App>()"];
-
-  model.groups.forEach((group, index) => {
-    chain.push(`  .route(${JSON.stringify(group.path)}, group${index})`);
-  });
-
-  chain.push(
-    ";",
+  const code = [
+    ...imports,
+    "",
+    "const app = new Hono<App>();",
+    "",
+    'app.route("/", root);',
     "",
     "export type AppType = typeof app;",
     "",
     "export default app;",
-    ""
-  );
+    "",
+  ].join("\n");
 
   return {
-    code: [...imports, "", ...chain].join("\n"),
+    code,
     id: moduleId,
     kind: "app",
   };

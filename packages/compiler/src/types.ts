@@ -119,8 +119,10 @@ export interface RouteModel {
 }
 
 export interface RouteGroup {
-  readonly configSources: readonly string[];
+  readonly children: readonly string[];
+  readonly configSource?: string;
   readonly id: string;
+  readonly parentId?: string;
   readonly path: string;
   readonly routes: readonly string[];
 }

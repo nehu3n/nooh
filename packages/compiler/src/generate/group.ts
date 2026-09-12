@@ -37,6 +37,25 @@ const getGroupRoutes = (
 const capitalize = (value: string): string =>
   value.charAt(0).toUpperCase() + value.slice(1);
 
+const getGroup = (model: ProjectModel, id: string): RouteGroup | undefined =>
+  model.groups.find((group) => group.id === id);
+
+const getChildPath = (parent: RouteGroup, child: RouteGroup): string => {
+  if (parent.path === "/") {
+    return child.path;
+  }
+
+  const prefix = `${parent.path}/`;
+
+  if (!child.path.startsWith(prefix)) {
+    throw new Error(
+      `Invalid group tree: "${child.path}" is not a child of "${parent.path}".`
+    );
+  }
+
+  return child.path.slice(prefix.length);
+};
+
 export const generateGroupModule = (
   plan: CompilationPlan,
   model: ProjectModel,
@@ -46,6 +65,11 @@ export const generateGroupModule = (
   const typesModuleId = `${plan.outputRoot}/types.ts`;
   const routes = getGroupRoutes(model, group);
 
+  const children = group.children
+    .map((childId) => getGroup(model, childId))
+    .filter((child): child is RouteGroup => child !== undefined)
+    .sort((a, b) => a.path.localeCompare(b.path));
+
   const imports = [
     `import { Hono } from "hono";`,
     `import type { App } from ${JSON.stringify(
@@ -53,10 +77,18 @@ export const generateGroupModule = (
     )};`,
   ];
 
-  group.configSources.forEach((source, index) => {
+  if (group.configSource) {
     imports.push(
-      `import groupConfig${index} from ${JSON.stringify(
-        relativeModuleSpecifier(moduleId, source)
+      `import groupConfig from ${JSON.stringify(
+        relativeModuleSpecifier(moduleId, group.configSource)
+      )};`
+    );
+  }
+
+  children.forEach((child, index) => {
+    imports.push(
+      `import child${index} from ${JSON.stringify(
+        relativeModuleSpecifier(moduleId, groupModuleId(plan, child.id))
       )};`
     );
   });
@@ -81,10 +113,21 @@ export const generateGroupModule = (
   const registerDeclarations = methods.map((method) => {
     const name = `register${capitalize(method)}`;
 
-    return [
-      `const ${name} = route.${method} as unknown as RouteRegister;`,
-    ].join("\n");
+    return `const ${name} = route.${method} as unknown as RouteRegister;`;
   });
+
+  const useDeclaration = group.configSource
+    ? [
+        "type RouteUse = (",
+        "  path: string,",
+        "  ...handlers: any[]",
+        ") => typeof route;",
+        "",
+        "const use = route.use as unknown as RouteUse;",
+        "",
+        'use("*", ...(groupConfig.middleware ?? []));',
+      ]
+    : [];
 
   const registrations = routes.map((route, index) => {
     const register = `register${capitalize(route.method)}`;
@@ -94,28 +137,12 @@ export const generateGroupModule = (
     )}, ...endpoint${index});`;
   });
 
-  const useDeclaration =
-    group.configSources.length > 0
-      ? [
-          "",
-          "type RouteUse = (",
-          "  path: string,",
-          "  ...handlers: any[]",
-          ") => typeof route;",
-          "",
-          "const use = route.use as unknown as RouteUse;",
-          "",
-          "const groupMiddleware = [",
-          ...group.configSources.map(
-            (_, index) => `  ...(groupConfig${index}.middleware ?? []),`
-          ),
-          "];",
-          "",
-          "if (groupMiddleware.length > 0) {",
-          '  use("*", ...groupMiddleware);',
-          "}",
-        ]
-      : [];
+  const childRegistrations = children.map(
+    (child, index) =>
+      `  route.route(${JSON.stringify(
+        getChildPath(group, child)
+      )}, child${index});`
+  );
 
   const code = [
     ...imports,
@@ -125,9 +152,9 @@ export const generateGroupModule = (
     ...registerTypes,
     "",
     ...registerDeclarations,
-    ...useDeclaration,
-    "",
-    ...registrations,
+    ...(useDeclaration.length > 0 ? ["", ...useDeclaration] : []),
+    ...(registrations.length > 0 ? ["", ...registrations] : []),
+    ...(childRegistrations.length > 0 ? ["", ...childRegistrations] : []),
     "",
     "export default route;",
     "",

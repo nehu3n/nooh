@@ -85,12 +85,137 @@ const sortRoutes = (a: RouteModel, b: RouteModel): number => {
   return a.source.localeCompare(b.source);
 };
 
+const parentGroupPath = (groupPath: string): string | null => {
+  const normalized = normalizePath(groupPath);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const parts = normalized.split("/").filter(Boolean);
+
+  if (parts.length <= 1) {
+    return "";
+  }
+
+  return parts.slice(0, -1).join("/");
+};
+
 const getAncestorGroupPaths = (groupPath: string): readonly string[] => {
   const parts = normalizePath(groupPath).split("/").filter(Boolean);
 
   return Array.from({ length: parts.length + 1 }, (_, index) =>
     parts.slice(0, index).join("/")
   );
+};
+
+const groupId = (path: string): string => path || "root";
+
+const buildGroups = (
+  parsed: ParsedProject,
+  routeModels: readonly RouteModel[],
+  diagnostics: Diagnostic[]
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ...
+): readonly RouteGroup[] => {
+  const configSources = new Map<string, string>();
+
+  for (const group of parsed.groups) {
+    const path = normalizePath(group.groupPath);
+    const previous = configSources.get(path);
+
+    if (previous) {
+      diagnostics.push({
+        code: "NOOH006",
+        file: group.source,
+        message: [
+          `Duplicate group definition for "${path || "/"}".`,
+          "",
+          `First declaration: ${previous}`,
+          `Second declaration: ${group.source}`,
+        ].join("\n"),
+        severity: "error",
+      });
+
+      continue;
+    }
+
+    configSources.set(path, group.source);
+  }
+
+  const groupPaths = new Set<string>([""]);
+
+  for (const group of parsed.groups) {
+    for (const ancestor of getAncestorGroupPaths(group.groupPath)) {
+      groupPaths.add(ancestor);
+    }
+  }
+
+  for (const route of routeModels) {
+    for (const ancestor of getAncestorGroupPaths(route.groupPath)) {
+      groupPaths.add(ancestor);
+    }
+  }
+
+  const routesByGroup = new Map<string, string[]>();
+
+  for (const route of routeModels) {
+    const routes = routesByGroup.get(route.groupPath);
+
+    if (routes) {
+      routes.push(route.id);
+    } else {
+      routesByGroup.set(route.groupPath, [route.id]);
+    }
+  }
+
+  const childrenByGroup = new Map<string, string[]>();
+
+  for (const path of groupPaths) {
+    if (!path) {
+      continue;
+    }
+
+    const parent = parentGroupPath(path) ?? "";
+
+    const children = childrenByGroup.get(parent);
+
+    if (children) {
+      children.push(path);
+    } else {
+      childrenByGroup.set(parent, [path]);
+    }
+  }
+
+  return [...groupPaths]
+    .sort((a, b) => {
+      if (!a && b) {
+        return -1;
+      }
+
+      if (a && !b) {
+        return 1;
+      }
+
+      return a.localeCompare(b);
+    })
+    .map((path) => {
+      const children = [...(childrenByGroup.get(path) ?? [])].sort();
+      const configSource = configSources.get(path);
+      const parent = parentGroupPath(path);
+
+      return {
+        children: children.map(groupId),
+        id: groupId(path),
+        ...(parent !== null && {
+          parentId: groupId(parent),
+        }),
+        path: path ? ensureLeadingSlash(path) : "/",
+        routes: [...(routesByGroup.get(path) ?? [])].sort(),
+        ...(configSource !== undefined && {
+          configSource,
+        }),
+      };
+    });
 };
 
 export const analyze = (
@@ -144,32 +269,7 @@ export const analyze = (
 
   routeModels.sort(sortRoutes);
 
-  const groupConfigSources = new Map(
-    parsed.groups.map((group) => [normalizePath(group.groupPath), group.source])
-  );
-
-  const groupMap = new Map<string, string[]>();
-
-  for (const route of routeModels) {
-    const existing = groupMap.get(route.groupPath);
-
-    if (existing) {
-      existing.push(route.id);
-    } else {
-      groupMap.set(route.groupPath, [route.id]);
-    }
-  }
-
-  const groups: RouteGroup[] = [...groupMap.entries()]
-    .map(([path, routes]) => ({
-      configSources: getAncestorGroupPaths(path)
-        .map((ancestor) => groupConfigSources.get(ancestor))
-        .filter((source): source is string => source !== undefined),
-      id: path || "root",
-      path: path ? ensureLeadingSlash(path) : "/",
-      routes: [...routes].sort(),
-    }))
-    .sort((a, b) => a.path.localeCompare(b.path));
+  const groups = buildGroups(parsed, routeModels, diagnostics);
 
   return {
     diagnostics,
