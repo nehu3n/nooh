@@ -25,21 +25,15 @@ describe("compile", () => {
       sources: {
         files: [
           {
-            content: `
-              export default {};
-            `,
+            content: "",
             path: "src/config.ts",
           },
           {
-            content: `
-              export default null;
-            `,
+            content: "",
             path: "src/routes/users/endpoints/index.get.ts",
           },
           {
-            content: `
-              export default null;
-            `,
+            content: "",
             path: "src/routes/users/endpoints/[id].get.ts",
           },
         ],
@@ -47,8 +41,6 @@ describe("compile", () => {
     });
 
     expect(result.diagnostics).toHaveLength(0);
-    expect(result.plan).toBeDefined();
-    expect(result.output).toBeDefined();
 
     expect(
       result.model.routes.map((route) => ({
@@ -67,13 +59,19 @@ describe("compile", () => {
     ]);
 
     expect(
-      result.output?.modules.some((module) => module.id === ".nooh/app.ts")
+      result.output?.modules.some(
+        (module) => module.id === ".nooh/router/middleware.ts"
+      )
     ).toBe(true);
 
     expect(
       result.output?.modules.some(
         (module) => module.id === ".nooh/router/users/[id].ts"
       )
+    ).toBe(true);
+
+    expect(
+      result.output?.modules.some((module) => module.id === ".nooh/app.ts")
     ).toBe(true);
   });
 

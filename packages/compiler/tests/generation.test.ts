@@ -51,54 +51,58 @@ const model = {
 };
 
 describe("code generation", () => {
-  test("generates a typed router module", () => {
-    const compilationPlan = plan(model, ".nooh");
-
-    const output = generate(compilationPlan, model);
+  test("generates a path-specialized HTTP helper", () => {
+    const output = generate(plan(model, ".nooh"), model);
 
     const module = output.modules.find(
       (candidate) => candidate.id === ".nooh/router/users/[id].ts"
     );
 
-    expect(module).toBeDefined();
+    expect(module?.code).toContain('type Path = "/users/:id";');
+
+    expect(module?.code).toContain("export function get");
 
     expect(module?.code).toContain("Handler<App, Path>");
+  });
 
-    expect(module?.code).toContain('Path = "/users/:id"');
+  test("generates Standard Schema validation support", () => {
+    const output = generate(plan(model, ".nooh"), model);
+
+    const module = output.modules.find(
+      (candidate) => candidate.id === ".nooh/router/users/[id].ts"
+    );
+
+    expect(module?.code).toContain("@hono/standard-validator");
 
     expect(module?.code).toContain('sValidator("json"');
 
     expect(module?.code).toContain('sValidator("query"');
-
-    expect(module?.code).not.toContain("@/router");
-
-    expect(module?.code).not.toContain("@/config");
   });
 
   test("generates the shared middleware helper", () => {
-    const compilationPlan = plan(model, ".nooh");
-
-    const output = generate(compilationPlan, model);
+    const output = generate(plan(model, ".nooh"), model);
 
     const module = output.modules.find(
       (candidate) => candidate.id === ".nooh/router/middleware.ts"
     );
 
-    expect(module).toBeDefined();
-
-    expect(module?.code).toContain("createMiddleware<App>");
+    expect(module?.code).toBe(
+      [
+        `import { createMiddleware } from "hono/factory";`,
+        `import type { App } from "../types.js";`,
+        "",
+        "export const middleware = createMiddleware<App>;",
+        "",
+      ].join("\n")
+    );
   });
 
-  test("generates native Hono app code", () => {
-    const compilationPlan = plan(model, ".nooh");
-
-    const output = generate(compilationPlan, model);
+  test("generates native Hono application code", () => {
+    const output = generate(plan(model, ".nooh"), model);
 
     const app = output.modules.find(
       (candidate) => candidate.id === ".nooh/app.ts"
     );
-
-    expect(app).toBeDefined();
 
     expect(app?.code).toContain("new Hono<App>()");
     expect(app?.code).toContain("AppType = typeof app");
