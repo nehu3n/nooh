@@ -59,9 +59,15 @@ export interface DiscoveredEndpoint {
   readonly source: string;
 }
 
+export interface DiscoveredGroup {
+  readonly groupPath: string;
+  readonly source: string;
+}
+
 export interface DiscoveredProject {
   readonly config: LoadedConfig;
   readonly endpoints: readonly DiscoveredEndpoint[];
+  readonly groups: readonly DiscoveredGroup[];
 }
 
 export type RouteSegment =
@@ -86,8 +92,14 @@ export interface ParsedRoute {
   readonly source: string;
 }
 
+export interface ParsedGroup {
+  readonly groupPath: string;
+  readonly source: string;
+}
+
 export interface ParsedProject {
   readonly diagnostics: readonly Diagnostic[];
+  readonly groups: readonly ParsedGroup[];
   readonly routes: readonly ParsedRoute[];
 }
 
@@ -107,6 +119,7 @@ export interface RouteModel {
 }
 
 export interface RouteGroup {
+  readonly configSources: readonly string[];
   readonly id: string;
   readonly path: string;
   readonly routes: readonly string[];

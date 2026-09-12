@@ -1,5 +1,6 @@
 import type {
   DiscoveredEndpoint,
+  DiscoveredGroup,
   DiscoveredProject,
   LoadedConfig,
   SourceFile,
@@ -14,6 +15,41 @@ import {
 
 const isTypeScriptFile = (file: SourceFile): boolean =>
   file.path.endsWith(".ts") || file.path.endsWith(".tsx");
+
+const isGroupFile = (filePath: string): boolean => {
+  const filename = filePath.split("/").at(-1);
+
+  return filename === "$.ts" || filename === "$.tsx";
+};
+
+const discoverGroup = (
+  config: LoadedConfig,
+  file: SourceFile
+): DiscoveredGroup | null => {
+  const source = toProjectPath(file.path, config.root);
+
+  if (!isPathInside(source, config.routesRoot)) {
+    return null;
+  }
+
+  const relative = relativePath(config.routesRoot, source);
+  const parts = relative.split("/").filter(Boolean);
+
+  if (!isGroupFile(source)) {
+    return null;
+  }
+
+  const directoryParts = parts.slice(0, -1);
+
+  if (directoryParts.includes("endpoints")) {
+    return null;
+  }
+
+  return {
+    groupPath: normalizePath(directoryParts.join("/")),
+    source,
+  };
+};
 
 export const findEndpointsDirectory = (
   routesRoot: string,
@@ -89,6 +125,7 @@ export const discover = (
   config: LoadedConfig
 ): DiscoveredProject => {
   const endpoints: DiscoveredEndpoint[] = [];
+  const groups: DiscoveredGroup[] = [];
 
   for (const file of snapshot.files) {
     if (!isTypeScriptFile(file)) {
@@ -101,6 +138,13 @@ export const discover = (
       continue;
     }
 
+    const group = discoverGroup(config, file);
+
+    if (group) {
+      groups.push(group);
+      continue;
+    }
+
     const endpoint = discoverEndpoint(config, file);
 
     if (endpoint) {
@@ -109,9 +153,11 @@ export const discover = (
   }
 
   endpoints.sort((a, b) => a.source.localeCompare(b.source));
+  groups.sort((a, b) => a.source.localeCompare(b.source));
 
   return {
     config,
     endpoints,
+    groups,
   };
 };

@@ -2,6 +2,7 @@ import { parseEndpoint } from "@/pipeline/route-parser";
 import type {
   Diagnostic,
   DiscoveredProject,
+  ParsedGroup,
   ParsedProject,
   ParsedRoute,
 } from "@/types";
@@ -20,10 +21,17 @@ export const parse = (project: DiscoveredProject): ParsedProject => {
     }
   }
 
+  const groups: ParsedGroup[] = project.groups.map((group) => ({
+    groupPath: group.groupPath,
+    source: group.source,
+  }));
+
   routes.sort((a, b) => a.source.localeCompare(b.source));
+  groups.sort((a, b) => a.source.localeCompare(b.source));
 
   return {
     diagnostics,
+    groups,
     routes,
   };
 };

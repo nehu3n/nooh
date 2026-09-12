@@ -53,6 +53,14 @@ export const generateGroupModule = (
     )};`,
   ];
 
+  group.configSources.forEach((source, index) => {
+    imports.push(
+      `import groupConfig${index} from ${JSON.stringify(
+        relativeModuleSpecifier(moduleId, source)
+      )};`
+    );
+  });
+
   routes.forEach((route, index) => {
     imports.push(
       `import endpoint${index} from ${JSON.stringify(
@@ -86,6 +94,29 @@ export const generateGroupModule = (
     )}, ...endpoint${index});`;
   });
 
+  const useDeclaration =
+    group.configSources.length > 0
+      ? [
+          "",
+          "type RouteUse = (",
+          "  path: string,",
+          "  ...handlers: any[]",
+          ") => typeof route;",
+          "",
+          "const use = route.use as unknown as RouteUse;",
+          "",
+          "const groupMiddleware = [",
+          ...group.configSources.map(
+            (_, index) => `  ...(groupConfig${index}.middleware ?? []),`
+          ),
+          "];",
+          "",
+          "if (groupMiddleware.length > 0) {",
+          '  use("*", ...groupMiddleware);',
+          "}",
+        ]
+      : [];
+
   const code = [
     ...imports,
     "",
@@ -94,6 +125,7 @@ export const generateGroupModule = (
     ...registerTypes,
     "",
     ...registerDeclarations,
+    ...useDeclaration,
     "",
     ...registrations,
     "",

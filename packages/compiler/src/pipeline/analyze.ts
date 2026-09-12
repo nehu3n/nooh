@@ -85,6 +85,14 @@ const sortRoutes = (a: RouteModel, b: RouteModel): number => {
   return a.source.localeCompare(b.source);
 };
 
+const getAncestorGroupPaths = (groupPath: string): readonly string[] => {
+  const parts = normalizePath(groupPath).split("/").filter(Boolean);
+
+  return Array.from({ length: parts.length + 1 }, (_, index) =>
+    parts.slice(0, index).join("/")
+  );
+};
+
 export const analyze = (
   parsed: ParsedProject,
   config: LoadedConfig
@@ -136,6 +144,10 @@ export const analyze = (
 
   routeModels.sort(sortRoutes);
 
+  const groupConfigSources = new Map(
+    parsed.groups.map((group) => [normalizePath(group.groupPath), group.source])
+  );
+
   const groupMap = new Map<string, string[]>();
 
   for (const route of routeModels) {
@@ -150,6 +162,9 @@ export const analyze = (
 
   const groups: RouteGroup[] = [...groupMap.entries()]
     .map(([path, routes]) => ({
+      configSources: getAncestorGroupPaths(path)
+        .map((ancestor) => groupConfigSources.get(ancestor))
+        .filter((source): source is string => source !== undefined),
       id: path || "root",
       path: path ? ensureLeadingSlash(path) : "/",
       routes: [...routes].sort(),
