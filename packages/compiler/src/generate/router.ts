@@ -39,7 +39,7 @@ const renderMethod = (route: RouteModel): string => {
     "  Record<ValidationTarget, StandardSchema>",
     ">;",
     "",
-    "type HandlerInput<T> = T extends H<",
+    "type HandlerInput<T> = T extends Handler<",
     "  any,",
     "  any,",
     "  infer I,",
@@ -56,14 +56,14 @@ const renderMethod = (route: RouteModel): string => {
     "type ValidationInput<V extends ValidationOptions> =",
     ...VALIDATION_TARGETS.map(
       (target) =>
-        `  & (${target} extends keyof V ? HandlerInput<ValidationHandler<"${target}", NonNullable<V[${JSON.stringify(target)}]>>> : {})`
+        `  & (${JSON.stringify(target)} extends keyof V ? HandlerInput<ValidationHandler<${JSON.stringify(target)}, NonNullable<V[${JSON.stringify(target)}]>>> : {})`
     ),
     ";",
     "",
     "type ValidationHandlers<V extends ValidationOptions> = [",
     ...VALIDATION_TARGETS.map(
       (target) =>
-        `  ...(V extends { readonly ${target}: infer Schema extends StandardSchema } ? [ValidationHandler<"${target}", Schema>] : []),`
+        `  ...(V extends { readonly ${target}: infer Schema extends StandardSchema } ? [ValidationHandler<${JSON.stringify(target)}, Schema>] : []),`
     ),
     "];",
     "",
@@ -101,7 +101,7 @@ const renderMethod = (route: RouteModel): string => {
     "  input:",
     "    | H",
     "    | EndpointOptions<M, V, H>,",
-    "): readonly HonoHandler[] {",
+    "): readonly RouteHandler[] {",
     '  if (typeof input === "function") {',
     "    return [input];",
     "  }",
@@ -110,13 +110,15 @@ const renderMethod = (route: RouteModel): string => {
     "    ...(input.middleware ?? []),",
     ...VALIDATION_TARGETS.map(
       (target) =>
-        `    ...(input.validation?.${target} !== undefined ? [sValidator("${target}", input.validation.${target})] : []),`
+        `    ...(input.validation?.${target} !== undefined ? [sValidator(${JSON.stringify(target)}, input.validation.${target})] : []),`
     ),
     "    input.handler,",
     "  ];",
     "}",
     "",
-    "type HonoHandler = H<App, Path, any, any>;",
+    "type RouteHandler =",
+    "  | Handler<App, Path, any, any>",
+    "  | MiddlewareHandler<App, Path>;",
     "",
   ].join("\n");
 };
@@ -135,12 +137,12 @@ export const generateRouterModule = (
   return {
     code: [
       `import { sValidator } from "@hono/standard-validator";`,
-      `import type { H, Handler, MiddlewareHandler } from "hono";`,
+      `import type { Handler, MiddlewareHandler } from "hono";`,
       `import type { App } from ${JSON.stringify(
         relativeModuleSpecifier(moduleId, typesModuleId)
       )};`,
       "",
-      ...routes.map((route) => renderMethod(route)),
+      ...routes.map(renderMethod),
     ].join("\n"),
     id: moduleId,
     kind: "router",

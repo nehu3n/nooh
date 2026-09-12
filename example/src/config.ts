@@ -1,6 +1,6 @@
 import { config } from "nooh";
 
-interface App {
+export interface App {
   Variables: {
     db: "/tmp/db";
   };

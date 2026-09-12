@@ -108,10 +108,11 @@ importers:
         version: 5.0.0(@types/node@22.20.2)(vite@8.3.0(@types/node@22.20.2)(esbuild@0.28.2)(jiti@2.6.1)(tsx@4.23.13)(yaml@2.9.0))
 
   packages/nooh:
-    devDependencies:
+    dependencies:
       '@hono/standard-validator':
         specifier: ^0.4.0
         version: 0.4.0(@standard-schema/spec@1.1.0)(hono@4.13.7)
+    devDependencies:
       tsdown:
         specifier: 'catalog:'
         version: 0.23.0(tsx@4.23.13)(typescript@7.0.2)

@@ -7,7 +7,7 @@ import type {
   RouteGroup,
   RouteModel,
 } from "@/types";
-import { relativeModuleSpecifier } from "@/utils/path";
+import { ensureLeadingSlash, relativeModuleSpecifier } from "@/utils/path";
 
 const getGroupRoutes = (
   model: ProjectModel,
@@ -63,7 +63,7 @@ export const generateGroupModule = (
   routes.forEach((route, index) => {
     chain.push(
       `  .${route.method}(${JSON.stringify(
-        route.localPath || "/"
+        ensureLeadingSlash(route.localPath)
       )}, ...endpoint${index})`
     );
   });
