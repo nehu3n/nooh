@@ -172,3 +172,10 @@ export interface NoohCompiler {
   parse: (project: DiscoveredProject) => ParsedProject;
   plan: (model: ProjectModel, outputRoot?: string) => CompilationPlan;
 }
+
+export interface OutputDiff {
+  readonly added: readonly GeneratedModule[];
+  readonly changed: readonly GeneratedModule[];
+  readonly removed: readonly string[];
+  readonly unchanged: readonly GeneratedModule[];
+}

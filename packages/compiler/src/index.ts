@@ -3,6 +3,7 @@ export { analyze } from "@/analyze";
 export { compile } from "@/compile";
 export { createCompiler } from "@/compiler";
 export { loadConfig } from "@/config";
+export { diff } from "@/diff";
 export { discover } from "@/discover";
 export { generate } from "@/generate";
 export { parse } from "@/parse";
@@ -23,6 +24,7 @@ export type {
   ModuleLoader,
   ModulePlan,
   NoohCompiler,
+  OutputDiff,
   ParsedProject,
   ParsedRoute,
   ProjectModel,
