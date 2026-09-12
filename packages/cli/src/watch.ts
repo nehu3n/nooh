@@ -7,11 +7,6 @@ export interface WatchOptions {
   readonly onBuild?: (success: boolean) => void | Promise<void>;
 }
 
-const SOURCE_EXTENSIONS = [".ts", ".tsx"];
-
-const hasSourceExtension = (path: string): boolean =>
-  SOURCE_EXTENSIONS.some((extension) => path.endsWith(extension));
-
 export const watch = async (options: WatchOptions = {}): Promise<void> => {
   const project = await discoverProject();
 
@@ -53,15 +48,9 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
     }, 100);
   };
 
-  const watcher = watchFs(
-    `${project.root}/src`,
-    { recursive: true },
-    (_event, filename) => {
-      if (filename === null || hasSourceExtension(filename.toString())) {
-        schedule();
-      }
-    }
-  );
+  const watcher = watchFs(`${project.root}/src`, { recursive: true }, () => {
+    schedule();
+  });
 
   const close = (): void => {
     watcher.close();
