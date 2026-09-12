@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": {
+      "@router/*": ["./.nooh/router/*"],
+      "@middleware/*": ["./src/middleware/*"]
+    }
+  },
+  "include": ["src/**/*.ts", ".nooh/**/*.ts"]
+}

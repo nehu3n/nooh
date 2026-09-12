@@ -1,0 +1,17 @@
+{
+  "name": "@nooh-ts/example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "hono": "catalog:",
+    "nooh": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}
