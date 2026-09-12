@@ -9,7 +9,7 @@ import {
 import { writeOutput } from "@/output";
 import { discoverProject } from "@/project";
 
-export const build = async (): Promise<boolean> => {
+export const runBuild = async (): Promise<boolean> => {
   const project = await discoverProject();
 
   const files: SourceFile[] = await Promise.all(

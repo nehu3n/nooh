@@ -1,6 +1,6 @@
 import { watch as watchFs } from "node:fs";
 
-import { build } from "@/commands/build";
+import { runBuild } from "@/commands/build";
 import { discoverProject } from "@/project";
 
 export interface WatchOptions {
@@ -28,7 +28,7 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
     building = true;
 
     try {
-      const success = await build();
+      const success = await runBuild();
 
       await options.onBuild?.(success);
     } finally {
