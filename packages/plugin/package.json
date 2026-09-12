@@ -63,6 +63,7 @@
     "unplugin": "^3.3.0"
   },
   "devDependencies": {
+    "@types/node": "catalog:",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
