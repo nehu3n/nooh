@@ -1,0 +1,16 @@
+{
+  "name": "@nooh-ts/web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "blume build",
+    "check": "blume check",
+    "dev": "blume dev",
+    "doctor": "blume doctor",
+    "preview": "blume preview",
+    "validate": "blume validate"
+  },
+  "dependencies": {
+    "blume": "^1.6.4"
+  }
+}

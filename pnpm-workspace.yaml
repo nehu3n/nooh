@@ -4,6 +4,7 @@ packages:
   - example
 
 allowBuilds:
+  '@scarf/scarf': true
   esbuild: true
   lefthook: false
 

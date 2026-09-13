@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "isolatedDeclarations": false,
+    "allowJs": true,
+    "checkJs": true
+  },
+  "include": ["blume.config.ts", "docs/**/*.ts", "docs/**/*.tsx"]
+}
