@@ -65,12 +65,12 @@ importers:
       '@hono/standard-validator':
         specifier: ^0.4.0
         version: 0.4.0(@standard-schema/spec@1.1.0)(hono@4.13.7)
+      '@nooh-ts/nooh':
+        specifier: workspace:*
+        version: link:../packages/nooh
       hono:
         specifier: 'catalog:'
         version: 4.13.7
-      nooh:
-        specifier: workspace:*
-        version: link:../packages/nooh
     devDependencies:
       '@nooh-ts/cli':
         specifier: workspace:*

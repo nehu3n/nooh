@@ -1,4 +1,4 @@
-import { config } from "nooh";
+import { config } from "@nooh-ts/nooh";
 
 export interface App {
   Variables: {

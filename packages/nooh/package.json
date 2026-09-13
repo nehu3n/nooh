@@ -1,5 +1,5 @@
 {
-  "name": "nooh",
+  "name": "@nooh-ts/nooh",
   "version": "0.1.0",
   "description": "🧊 A zero-dependency, compile-time metaframework for building type-safe file-based Hono APIs.",
   "keywords": [
