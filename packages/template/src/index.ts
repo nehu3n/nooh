@@ -96,14 +96,14 @@ const packageJson = (name: string): string =>
   `${JSON.stringify(
     {
       dependencies: {
-        "@hono/standard-validator": "^0.4.0",
-        "@nooh-ts/nooh": `^${NOOH_VERSION}`,
-        hono: "^4.13.7",
+        "@hono/standard-validator": "latest",
+        "@nooh-ts/nooh": `${NOOH_VERSION}`,
+        hono: "latest",
       },
       devDependencies: {
-        "@nooh-ts/cli": `^${CLI_VERSION}`,
-        tsx: "^4.20.3",
-        typescript: "^5.9.0",
+        "@nooh-ts/cli": `${CLI_VERSION}`,
+        tsx: "latest",
+        typescript: "latest",
       },
       engines: {
         node: ">=22",
@@ -134,11 +134,11 @@ dist/
 
   "nooh.config.ts": `import { config } from "@nooh-ts/nooh";
 
-export interface AppConfig {
+export interface App {
   Variables: {};
 }
 
-export default config<AppConfig>({
+export default config<App>({
   routes: "src/routes",
 });
 `,
@@ -385,7 +385,12 @@ const main = async (): Promise<void> => {
 
     if (result.status !== 0) {
       installSpinner.stop("Dependency installation failed");
-      process.exit(result.status ?? 1);
+
+      outro(
+        `cd ${options.name}\n${packageManagerCommand(options.packageManager)} dev`
+      );
+
+      return;
     }
 
     installSpinner.stop("Dependencies installed");
