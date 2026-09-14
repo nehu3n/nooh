@@ -387,7 +387,10 @@ const main = async (): Promise<void> => {
       installSpinner.stop("Dependency installation failed");
 
       outro(
-        `cd ${options.name}\n${packageManagerCommand(options.packageManager)} dev`
+        `Done! Your Nooh application is ready.
+
+  cd ${options.name}
+  ${packageManagerCommand(options.packageManager)} dev`
       );
 
       return;
