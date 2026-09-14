@@ -10,6 +10,11 @@ import { writeOutput } from "@/output";
 import { discoverProject } from "@/project";
 import { ui } from "@/ui";
 
+export interface BuildOptions {
+  readonly config?: string;
+  readonly quiet?: boolean;
+}
+
 export interface BuildResult {
   readonly duration: number;
   readonly modules: number;
@@ -17,11 +22,11 @@ export interface BuildResult {
 }
 
 export const runBuild = async (
-  options: { readonly quiet?: boolean } = {}
+  options: BuildOptions = {}
 ): Promise<BuildResult> => {
   const startedAt = performance.now();
 
-  const project = await discoverProject();
+  const project = await discoverProject(process.cwd(), options.config);
 
   const files: SourceFile[] = await Promise.all(
     project.files.map(async (path) => ({

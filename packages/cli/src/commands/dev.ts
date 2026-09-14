@@ -30,28 +30,81 @@ const stopProcess = async (child: ChildProcess): Promise<void> => {
   });
 };
 
-export const runDev = async (args: readonly string[]): Promise<void> => {
-  const command = [...args];
+const parseDevArgs = (
+  args: readonly string[]
+): {
+  readonly command: readonly string[];
+  readonly config?: string;
+} => {
+  const separator = args.indexOf("--");
 
-  if (command[0] === "--") {
-    command.shift();
+  const cliArgs = separator === -1 ? [...args] : args.slice(0, separator);
+
+  const command = separator === -1 ? [] : args.slice(separator + 1);
+
+  let config: string | undefined;
+
+  for (let index = 0; index < cliArgs.length; index += 1) {
+    const argument = cliArgs[index];
+
+    if (argument === "--config" || argument === "-c") {
+      const value = cliArgs[index + 1];
+
+      if (!value) {
+        throw new Error(`${argument} requires a config path.`);
+      }
+
+      config = value;
+      index += 1;
+      continue;
+    }
+
+    if (argument?.startsWith("--config=")) {
+      const value = argument.slice("--config=".length);
+
+      if (!value) {
+        throw new Error("--config requires a config path.");
+      }
+
+      config = value;
+      continue;
+    }
+
+    throw new Error(`unknown option "${argument}"`);
   }
+
+  return {
+    command,
+    ...(config !== undefined && { config }),
+  };
+};
+
+export const runDev = async (args: readonly string[]): Promise<void> => {
+  const parsed = parseDevArgs(args);
+  const command = [...parsed.command];
 
   if (command.length === 0) {
     ui.error("missing development command");
 
     console.error();
-    console.error(`  ${ui.dim("usage:")} nooh dev -- <command> [args...]`);
+    console.error(
+      `  ${ui.dim("usage:")} nooh dev [options] -- <command> [args...]`
+    );
+    console.error();
+    console.error(
+      `  ${ui.dim("example:")} nooh dev --config nooh.config.ts -- pnpm exec tsx src/index.ts`
+    );
 
     process.exitCode = 1;
     return;
   }
 
-  const project = await discoverProject();
+  const project = await discoverProject(process.cwd(), parsed.config);
 
   ui.title("dev server");
 
-  const initialBuild = await runBuild();
+  const parsedConfig = parsed.config ? { config: parsed.config } : undefined;
+  const initialBuild = await runBuild(parsedConfig);
 
   if (!initialBuild.success) {
     process.exitCode = 1;
@@ -113,6 +166,7 @@ export const runDev = async (args: readonly string[]): Promise<void> => {
   console.log();
 
   await watch({
+    config: parsed.config,
     onBuild: async (success) => {
       if (!success) {
         return;

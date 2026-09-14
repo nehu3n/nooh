@@ -6,11 +6,12 @@ import { discoverProject } from "@/project";
 import { ui } from "@/ui";
 
 export interface WatchOptions {
-  readonly onBuild?: (success: boolean) => void | Promise<void>;
+  readonly config?: string | undefined;
+  readonly onBuild?: ((success: boolean) => void | Promise<void>) | undefined;
 }
 
 export const watch = async (options: WatchOptions = {}): Promise<void> => {
-  const project = await discoverProject();
+  const project = await discoverProject(process.cwd(), options.config);
 
   let building = false;
   let pending = false;
@@ -25,7 +26,11 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
     building = true;
 
     try {
-      const result = await runBuild();
+      const optionsConfig = options.config
+        ? { config: options.config }
+        : undefined;
+
+      const result = await runBuild(optionsConfig);
 
       await options.onBuild?.(result.success);
     } finally {
