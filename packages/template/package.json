@@ -1,0 +1,24 @@
+{
+  "name": "@nooh-ts/create-template",
+  "version": "0.1.0",
+  "description": "Create a Nooh application.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-nooh": "./dist/index.mjs"
+  },
+  "files": [
+    "dist",
+    "readme.md"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}
