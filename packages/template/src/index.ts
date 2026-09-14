@@ -13,8 +13,8 @@ import {
   text,
 } from "@clack/prompts";
 
-const NOOH_VERSION = "0.1.0";
-const CLI_VERSION = "0.1.0";
+const NOOH_VERSION = "latest";
+const CLI_VERSION = "latest";
 
 type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
 
