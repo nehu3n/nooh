@@ -112,7 +112,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build packages
-        run: pnpm build
+        run: |
+          pnpm exec turbo run build \
+            --filter=@nooh-ts/nooh \
+            --filter=@nooh-ts/compiler \
+            --filter=@nooh-ts/cli \
+            --filter=@nooh-ts/create-template \
+            --filter=@nooh-ts/plugin
 
       - name: Publish to npm
         uses: changesets/action/publish@v2
