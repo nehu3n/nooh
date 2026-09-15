@@ -1,10 +1,13 @@
 import { readdir, stat } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { relative, resolve } from "node:path";
+
+import { loadConfig, type SourceSnapshot } from "@nooh-ts/compiler";
 
 export interface Project {
   readonly config: string;
   readonly files: readonly string[];
   readonly root: string;
+  readonly routesRoot: string;
 }
 
 const CONFIG_CANDIDATES = [
@@ -17,11 +20,14 @@ const isSourceFile = (path: string): boolean =>
   path.endsWith(".ts") || path.endsWith(".tsx");
 
 const walk = async (root: string): Promise<string[]> => {
-  const entries = await readdir(root, { withFileTypes: true });
+  const entries = await readdir(root, {
+    withFileTypes: true,
+  });
+
   const files: string[] = [];
 
   for (const entry of entries) {
-    const path = join(root, entry.name);
+    const path = resolve(root, entry.name);
 
     if (entry.isDirectory()) {
       // biome-ignore lint/performance/noAwaitInLoops: ...
@@ -74,6 +80,32 @@ const resolveConfig = async (
   );
 };
 
+const loadProjectConfig = async (root: string, config: string) => {
+  const result = await loadConfig({
+    config,
+    loader: {
+      loadDefault: async (path) => {
+        const module = await import(path);
+        return module.default;
+      },
+    },
+    root,
+    sources: {
+      files: [],
+    } satisfies SourceSnapshot,
+  });
+
+  const diagnostic = result.diagnostics.find(
+    (candidate) => candidate.severity === "error"
+  );
+
+  if (!result.config) {
+    throw new Error(diagnostic?.message ?? "Failed to load Nooh config.");
+  }
+
+  return result.config;
+};
+
 export const discoverProject = async (
   cwd: string = process.cwd(),
   explicitConfig?: string
@@ -81,14 +113,24 @@ export const discoverProject = async (
   const root = resolve(cwd);
   const config = await resolveConfig(root, explicitConfig);
 
-  const sourceRoot = resolve(root, "src");
-  const sourceRootStat = await stat(sourceRoot).catch(() => null);
+  const loadedConfig = await loadProjectConfig(root, config);
 
-  const files = sourceRootStat?.isDirectory() ? await walk(sourceRoot) : [];
+  const routesRoot = resolve(root, loadedConfig.routesRoot);
+
+  const routesStat = await stat(routesRoot).catch(() => null);
+
+  if (!routesStat?.isDirectory()) {
+    throw new Error(
+      `Nooh routes directory not found: ${relative(root, routesRoot)}`
+    );
+  }
+
+  const files = await walk(routesRoot);
 
   return {
     config,
     files,
     root,
+    routesRoot,
   };
 };

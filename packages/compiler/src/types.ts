@@ -53,7 +53,6 @@ export interface ConfigLoadResult {
 }
 
 export interface DiscoveredEndpoint {
-  readonly endpointsRoot: string;
   readonly groupPath: string;
   readonly localPath: string;
   readonly source: string;

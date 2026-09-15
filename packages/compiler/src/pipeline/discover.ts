@@ -7,17 +7,25 @@ import type {
   SourceSnapshot,
 } from "@/types";
 import {
+  basename,
+  dirname,
   isPathInside,
   normalizePath,
   relativePath,
   toProjectPath,
 } from "@/utils/path";
 
+const ROUTE_FILE_PATTERN =
+  /\.(get|post|put|patch|delete|options|head|all)\.(?:ts|tsx)$/;
+
 const isTypeScriptFile = (file: SourceFile): boolean =>
   file.path.endsWith(".ts") || file.path.endsWith(".tsx");
 
+const isRouteFile = (filePath: string): boolean =>
+  ROUTE_FILE_PATTERN.test(filePath);
+
 const isGroupFile = (filePath: string): boolean => {
-  const filename = filePath.split("/").at(-1);
+  const filename = basename(filePath);
 
   return filename === "$.ts" || filename === "$.tsx";
 };
@@ -32,53 +40,17 @@ const discoverGroup = (
     return null;
   }
 
-  const relative = relativePath(config.routesRoot, source);
-  const parts = relative.split("/").filter(Boolean);
-
   if (!isGroupFile(source)) {
     return null;
   }
 
-  const directoryParts = parts.slice(0, -1);
-
-  if (directoryParts.includes("endpoints")) {
-    return null;
-  }
+  const relative = relativePath(config.routesRoot, source);
+  const directory = dirname(relative);
 
   return {
-    groupPath: normalizePath(directoryParts.join("/")),
+    groupPath: normalizePath(directory),
     source,
   };
-};
-
-export const findEndpointsDirectory = (
-  routesRoot: string,
-  filePath: string,
-  root = ""
-): string | null => {
-  const normalizedRoutesRoot = toProjectPath(routesRoot, root);
-
-  const normalizedFilePath = toProjectPath(filePath, root);
-
-  if (!isPathInside(normalizedFilePath, normalizedRoutesRoot)) {
-    return null;
-  }
-
-  const relative = relativePath(normalizedRoutesRoot, normalizedFilePath);
-
-  const parts = relative.split("/").filter(Boolean);
-
-  const endpointIndex = parts.lastIndexOf("endpoints");
-
-  if (endpointIndex === -1) {
-    return null;
-  }
-
-  const groupParts = parts.slice(0, endpointIndex);
-
-  return normalizePath(
-    [normalizedRoutesRoot, ...groupParts, "endpoints"].filter(Boolean).join("/")
-  );
 };
 
 const discoverEndpoint = (
@@ -91,31 +63,15 @@ const discoverEndpoint = (
     return null;
   }
 
+  if (!isRouteFile(source)) {
+    return null;
+  }
+
   const relative = relativePath(config.routesRoot, source);
 
-  const parts = relative.split("/").filter(Boolean);
-
-  const endpointIndex = parts.lastIndexOf("endpoints");
-
-  if (endpointIndex === -1) {
-    return null;
-  }
-
-  const endpointsRoot = normalizePath(
-    [config.routesRoot, ...parts.slice(0, endpointIndex), "endpoints"].join("/")
-  );
-
-  const groupParts = parts.slice(0, endpointIndex);
-  const localParts = parts.slice(endpointIndex + 1);
-
-  if (localParts.length === 0) {
-    return null;
-  }
-
   return {
-    endpointsRoot,
-    groupPath: normalizePath(groupParts.join("/")),
-    localPath: normalizePath(localParts.join("/")),
+    groupPath: normalizePath(dirname(relative)),
+    localPath: normalizePath(basename(relative)),
     source,
   };
 };
@@ -129,12 +85,6 @@ export const discover = (
 
   for (const file of snapshot.files) {
     if (!isTypeScriptFile(file)) {
-      continue;
-    }
-
-    const source = toProjectPath(file.path, config.root);
-
-    if (!isPathInside(source, config.routesRoot)) {
       continue;
     }
 

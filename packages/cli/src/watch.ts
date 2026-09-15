@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/complexity/noVoid: ... */
-import { watch as watchFs } from "node:fs";
+import { type FSWatcher, watch as watchFs } from "node:fs";
 
 import { runBuild } from "@/commands/build";
 import { discoverProject } from "@/project";
@@ -11,11 +11,42 @@ export interface WatchOptions {
 }
 
 export const watch = async (options: WatchOptions = {}): Promise<void> => {
-  const project = await discoverProject(process.cwd(), options.config);
+  let project = await discoverProject(process.cwd(), options.config);
 
   let building = false;
   let pending = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+
+  let routeWatcher: FSWatcher | undefined;
+  let configWatcher: FSWatcher | undefined;
+
+  const closeWatchers = (): void => {
+    routeWatcher?.close();
+    configWatcher?.close();
+
+    routeWatcher = undefined;
+    configWatcher = undefined;
+  };
+
+  const updateWatchers = async (): Promise<void> => {
+    closeWatchers();
+
+    project = await discoverProject(process.cwd(), options.config);
+
+    routeWatcher = watchFs(
+      project.routesRoot,
+      {
+        recursive: true,
+      },
+      (_event, filename) => {
+        schedule(filename ?? undefined);
+      }
+    );
+
+    configWatcher = watchFs(project.config, (_event, filename) => {
+      schedule(filename ? filename.toString() : project.config);
+    });
+  };
 
   const rebuild = async (): Promise<void> => {
     if (building) {
@@ -26,13 +57,17 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
     building = true;
 
     try {
-      const optionsConfig = options.config
+      const buildOptions = options.config
         ? { config: options.config }
         : undefined;
 
-      const result = await runBuild(optionsConfig);
+      const result = await runBuild(buildOptions);
 
       await options.onBuild?.(result.success);
+
+      if (result.success) {
+        await updateWatchers();
+      }
     } finally {
       building = false;
 
@@ -64,18 +99,8 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
     }, 100);
   };
 
-  const watcher = watchFs(
-    `${project.root}/src`,
-    {
-      recursive: true,
-    },
-    (_event, filename) => {
-      schedule(filename ?? undefined);
-    }
-  );
-
   const close = (): void => {
-    watcher.close();
+    closeWatchers();
 
     if (timer !== undefined) {
       clearTimeout(timer);
@@ -86,7 +111,7 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
   process.once("SIGINT", close);
   process.once("SIGTERM", close);
 
-  ui.title("watching src/");
+  ui.title(`watching ${project.routesRoot.replace(`${project.root}/`, "")}/`);
 
   await rebuild();
 
