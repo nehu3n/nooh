@@ -53,8 +53,7 @@ For example:
 src/
 └── routes/
     └── users/
-        └── endpoints/
-            └── [id].get.ts
+        └── [id].get.ts
 ```
 
 is compiled into a generated router that exposes the corresponding HTTP method:
@@ -63,9 +62,9 @@ is compiled into a generated router that exposes the corresponding HTTP method:
 import { get } from "@router/users/[id]";
 
 export default get((c) => {
-  return c.json({
-    id: c.req.param("id"),
-  });
+  const id = c.req.param("id");
+
+  return c.json({ id });
 });
 ```
 

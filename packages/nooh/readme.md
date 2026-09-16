@@ -47,23 +47,22 @@ pnpm add -D @nooh-ts/cli
 Then create your project around a filesystem-based route tree:
 
 ```text
+nooh.config.ts
 src/
-├── config.ts
 ├── index.ts
 ├── middleware/
 │   └── logger.ts
 └── routes/
-    └── hello/
-        ├── $.ts
-        └── endpoints/
-            ├── [id].get.ts
-            └── index.get.ts
+    ├── index.get.ts
+    └── users/
+        ├── [id].post.ts
+        └── index.get.ts
 ```
 
 A route is just a file:
 
 ```ts
-import { get } from "@router/hello/[id]";
+import { get } from "@router/users/[id]";
 
 export default get((c) => {
   const id = c.req.param("id");
@@ -75,7 +74,7 @@ export default get((c) => {
 Which becomes:
 
 ```text
-GET /hello/:id
+GET /users/:id
 ```
 
 Then build your application:

@@ -47,23 +47,20 @@ pnpm dev
 A new project starts with a minimal filesystem-based structure:
 
 ```text
+nooh.config.ts
 src/
-├── config.ts
 ├── index.ts
 ├── middleware/
 └── routes/
-    └── hello/
-        ├── $.ts
-        └── endpoints/
-            └── index.get.ts
+    └── index.get.ts
 ```
 
 Routes are defined by their location and filename:
 
 ```ts
-import { get } from "@router/hello";
+import { get } from "@router/index";
 
-export default get((c) => c.json({ hello: "world" }));
+export default get((c) => c.text("hello world!"));
 ```
 
 Nooh compiles the route tree into a native Hono application.

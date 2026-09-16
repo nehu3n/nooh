@@ -74,9 +74,8 @@ The plugin resolves Nooh's generated modules, allowing routes to import generate
 import { get } from "@router/users/[id]";
 
 export default get((c) => {
-  return c.json({
-    id: c.req.param("id"),
-  });
+  const id = c.req.param("id");
+  return c.json({ id });
 });
 ```
 
@@ -90,17 +89,16 @@ During development, the plugin watches the relevant project files and recompiles
 src/
 └── routes/
     └── users/
-        └── endpoints/
-            └── [id].get.ts
-                │
-                ▼
-          Nooh compiler
-                │
-                ▼
-             .nooh/
-                │
-                ▼
-           build tool
+        └── [id].get.ts
+            │
+            ▼
+      Nooh compiler
+            │
+            ▼
+         .nooh/
+            │
+            ▼
+       build tool
 ```
 
 The generated output remains ordinary TypeScript and Hono code, while the host build tool remains responsible for bundling and execution.

@@ -71,8 +71,7 @@ Nooh generates its compiled application into `.nooh/`:
 .nooh/
 ├── app.ts
 └── router/
-    ├── hello.ts
-    └── hello/
+    ├── users/
         └── [id].ts
 ```
 
