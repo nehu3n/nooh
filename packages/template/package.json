@@ -20,5 +20,8 @@
   },
   "devDependencies": {
     "@types/node": "catalog:"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
