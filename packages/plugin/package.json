@@ -1,6 +1,6 @@
 {
   "name": "@nooh-ts/plugin",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bundler integrations for Nooh.",
   "keywords": [
     "nooh",

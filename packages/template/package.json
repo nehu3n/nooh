@@ -1,6 +1,6 @@
 {
   "name": "@nooh-ts/create-template",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Create a Nooh application.",
   "license": "MIT",
   "type": "module",
