@@ -171,54 +171,27 @@ ${packageManagerCommand(detectPackageManager())} build
 
 ## Routes
 
+Routes are defined in \`src/routes/\` and compiled by Nooh into \`.nooh/\`.
+
 The starter project includes:
 
 \`\`\`text
-GET /health
+GET /
 \`\`\`
 
-Routes are defined in \`src/routes/\` and compiled by Nooh into \`.nooh/\`.
 `,
 
-  "src/index.ts": `import app from "../.nooh/app";
-
-export default app;
+  "src/index.ts": `// Nooh generates a standard Hono application.
+// You can use any valid Hono entry point here:
+// https://hono.dev/docs/getting-started/basic
+import app from "../.nooh/app";
 `,
 
-  "src/middleware/logger.ts": `import { middleware } from "@router/middleware";
+  "src/middleware/.gitkeep": "",
 
-export default middleware({
-  handler: async (c, next) => {
-    const startedAt = performance.now();
+  "src/routes/index.get.ts": `import { get } from "@router/index";
 
-    await next();
-
-    const duration = performance.now() - startedAt;
-
-    console.log(
-      \`\${c.req.method} \${c.req.path} \${c.res.status} \${duration.toFixed(1)}ms\`,
-    );
-  },
-});
-`,
-
-  "src/routes/health/$.ts": `import { group } from "@nooh-ts/nooh";
-
-import logger from "@/middleware/logger";
-
-export default group({
-  middleware: [logger],
-});
-`,
-
-  "src/routes/health/endpoints/index.get.ts": `import { get } from "@router/health";
-
-export default get((c) => {
-  return c.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-  });
-});
+export default get((c) => c.text("hello world!"));
 `,
 
   "tsconfig.json": `{
@@ -226,6 +199,7 @@ export default get((c) => {
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "isolatedDeclarations": false,
     "strict": true,
     "skipLibCheck": true,
     "paths": {
