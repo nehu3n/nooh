@@ -2,6 +2,23 @@
   "name": "@nooh-ts/create-template",
   "version": "0.1.1",
   "description": "Create a Nooh application.",
+  "keywords": [
+    "nooh",
+    "hono",
+    "create",
+    "scaffold",
+    "framework",
+    "template"
+  ],
+  "homepage": "https://nooh-ts.pages.dev",
+  "bugs": {
+    "url": "https://github.com/nehu3n/nooh/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nehu3n/nooh.git",
+    "directory": "packages/template"
+  },
   "license": "MIT",
   "type": "module",
   "bin": {
