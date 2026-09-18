@@ -7,5 +7,5 @@
       "@middleware/*": ["./src/middleware/*"]
     }
   },
-  "include": ["src/**/*.ts", ".nooh/**/*.ts"]
+  "include": ["src/**/*.ts", ".nooh/**/*.ts", "nooh.config.ts"]
 }

@@ -6,6 +6,5 @@ export default middleware(async (c, next) => {
   await next();
 
   const duration = Date.now() - start;
-
   console.log(`${c.req.method} ${c.req.path} ${c.res.status} ${duration}ms`);
 });
