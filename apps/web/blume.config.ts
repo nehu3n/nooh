@@ -2,6 +2,7 @@ import { defineConfig } from "blume";
 
 export default defineConfig({
   content: {
+    pages: "pages",
     root: "docs",
   },
   description:
@@ -13,7 +14,7 @@ export default defineConfig({
   },
 
   logo: {
-    href: "/",
+    href: "/icon.ico",
     text: "nooh",
   },
 
@@ -29,38 +30,7 @@ export default defineConfig({
       href: "https://github.com/nehu3n/nooh",
       label: "GitHub",
     },
-    tabs: [
-      {
-        icon: "book-open",
-        label: "Guides",
-        path: "/getting-started",
-      },
-      {
-        icon: "layers",
-        label: "Core",
-        path: "/core",
-      },
-      {
-        icon: "terminal",
-        label: "CLI",
-        path: "/cli",
-      },
-      {
-        icon: "cpu",
-        label: "Compiler",
-        path: "/compiler",
-      },
-      {
-        icon: "plug",
-        label: "Integrations",
-        path: "/integrations",
-      },
-      {
-        icon: "code",
-        label: "Reference",
-        path: "/reference",
-      },
-    ],
+    tabs: [],
   },
 
   search: {
@@ -71,5 +41,6 @@ export default defineConfig({
     mode: "system",
     radius: "md",
   },
+
   title: "Nooh",
 });
