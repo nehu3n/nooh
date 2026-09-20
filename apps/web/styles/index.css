@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 @source "../src/**/*.astro";
 @source "../src/_components/**/*.astro";
@@ -25,12 +25,11 @@ body {
   background-color: #faf9f6;
 }
 
-.dark body {
+[data-theme="dark"] body {
   color: #f3f4f6;
   background-color: #0a0a0c;
 }
 
-/* Shiki dual-theme code highlighting for highlightCode */
 .astro-code {
   background-color: transparent !important;
 }
@@ -42,8 +41,7 @@ body {
   text-decoration: var(--shiki-light-text-decoration, inherit);
 }
 
-.dark .astro-code span,
-:root[data-theme="dark"] .astro-code span {
+[data-theme="dark"] .astro-code span {
   font-style: var(--shiki-dark-font-style, inherit);
   font-weight: var(--shiki-dark-font-weight, inherit);
   color: var(--shiki-dark, inherit);

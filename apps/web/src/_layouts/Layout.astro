@@ -32,21 +32,8 @@ const {
             ? null
             : localStorage.getItem("theme");
 
-        const prefersDark =
-          typeof window !== "undefined" &&
-          window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-
-        if (typeof storedTheme === "string") {
-          document.documentElement.dataset.theme = storedTheme;
-          return;
-        }
-
-        if (prefersDark) {
-          document.documentElement.dataset.theme = "dark";
-          return;
-        }
-        
-        document.documentElement.dataset.theme = "light";
+        document.documentElement.dataset.theme =
+          typeof storedTheme === "string" ? storedTheme : "dark";
       })();
     </script>
   </head>
