@@ -1,61 +1,58 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: ... */
 export type DependencyScope = "singleton" | "request" | "transient" | "value";
 
 export interface DependencyResolutionContext {
   readonly cache: Map<object, unknown>;
-  readonly resolving: Set<object>;
-  readonly stack: DependencyReference<string, unknown, DependencyScope>[];
 }
 
-export type AnyDependencyReference = DependencyReference<
-  string,
-  unknown,
-  DependencyScope
->;
+export interface DependencyDefinition<
+  Value,
+  Scope extends DependencyScope = DependencyScope,
+  Dependencies extends readonly AnyDependencyReference[] = readonly [],
+> {
+  readonly __nooh_definition: true;
+  readonly dependencies: Dependencies;
+  readonly factory: (dependencies: DependencyContext<Dependencies>) => Value;
+  readonly scope: Scope;
+}
 
 export interface DependencyReference<
   Name extends string,
   Value,
   Scope extends DependencyScope = DependencyScope,
+  Dependencies extends readonly AnyDependencyReference[] = readonly [],
 > {
   readonly __nooh_dependency: true;
-  readonly dependencies: readonly AnyDependencyReference[];
+  readonly dependencies: Dependencies;
   readonly name: Name;
   readonly resolve: (context: DependencyResolutionContext) => Value;
   readonly scope: Scope;
 }
 
-export interface DependencyDefinition<
+export type AnyDependencyReference = DependencyReference<
+  string,
+  unknown,
+  DependencyScope,
+  readonly AnyDependencyReference[]
+>;
+
+type AnyDependencyDefinition = DependencyDefinition<any, DependencyScope, any>;
+
+export type DependencyEntry = AnyDependencyDefinition | (() => unknown);
+
+interface DependencyFactoryOptions<
   Dependencies extends readonly AnyDependencyReference[],
   Value,
-  Scope extends DependencyScope = DependencyScope,
 > {
-  readonly __nooh_definition: true;
   readonly deps: Dependencies;
   readonly factory: (dependencies: DependencyContext<Dependencies>) => Value;
-  readonly scope: Scope;
 }
-
-export interface DependencyDefinitionOptions<
-  Dependencies extends readonly AnyDependencyReference[],
-  Value,
-> {
-  readonly create: (dependencies: DependencyContext<Dependencies>) => Value;
-  readonly deps: Dependencies & ValidateDependencies<Dependencies>;
-}
-
-export type DependencyEntry =
-  | DependencyDefinition<
-      readonly AnyDependencyReference[],
-      unknown,
-      DependencyScope
-    >
-  | (() => unknown);
 
 type DefinitionValue<T> =
   T extends DependencyDefinition<
-    readonly AnyDependencyReference[],
     infer Value,
-    DependencyScope
+    DependencyScope,
+    readonly AnyDependencyReference[]
   >
     ? Value
     : T extends () => infer Value
@@ -64,332 +61,199 @@ type DefinitionValue<T> =
 
 type DefinitionScope<T> =
   T extends DependencyDefinition<
-    readonly AnyDependencyReference[],
     unknown,
-    infer Scope
+    infer Scope,
+    readonly AnyDependencyReference[]
   >
     ? Scope
     : T extends () => unknown
       ? "singleton"
       : never;
 
+type DefinitionDependencies<T> =
+  T extends DependencyDefinition<unknown, DependencyScope, infer Dependencies>
+    ? Dependencies
+    : T extends () => unknown
+      ? readonly []
+      : never;
+
 export type Container<Entries extends Record<string, DependencyEntry>> = {
   readonly [Key in keyof Entries & string]: DependencyReference<
     Key,
     DefinitionValue<Entries[Key]>,
-    DefinitionScope<Entries[Key]>
+    DefinitionScope<Entries[Key]>,
+    DefinitionDependencies<Entries[Key]>
   >;
 };
 
-export type DependencyName<Dependency> =
-  Dependency extends DependencyReference<infer Name, unknown, DependencyScope>
-    ? Name
-    : never;
+const createDefinition = <
+  Value,
+  Scope extends DependencyScope,
+  const Dependencies extends readonly AnyDependencyReference[],
+>(
+  scope: Scope,
+  dependencies: Dependencies,
+  factory: (dependencies: DependencyContext<Dependencies>) => Value
+): DependencyDefinition<Value, Scope, Dependencies> => ({
+  __nooh_definition: true,
+  dependencies,
+  factory,
+  scope,
+});
 
-export type DependencyValue<Dependency> =
-  Dependency extends DependencyReference<string, infer Value, DependencyScope>
-    ? Value
-    : never;
+export function singleton<Value>(
+  factory: () => Value
+): DependencyDefinition<Value, "singleton", readonly []>;
 
-export type DependencyContext<
-  Dependencies extends readonly AnyDependencyReference[],
-> = {
-  [Dependency in Dependencies[number] as DependencyName<Dependency>]: DependencyValue<Dependency>;
-};
+export function singleton<
+  const Dependencies extends readonly AnyDependencyReference[],
+  Value,
+>(
+  options: DependencyFactoryOptions<Dependencies, Value>
+): DependencyDefinition<Value, "singleton", Dependencies>;
 
-export interface DuplicateDependency<Name extends string> {
-  readonly __nooh_dependency_error__: `Duplicate dependency name "${Name}".`;
+export function singleton<
+  const Dependencies extends readonly AnyDependencyReference[],
+  Value,
+>(
+  input: (() => Value) | DependencyFactoryOptions<Dependencies, Value>
+): DependencyDefinition<Value, "singleton", Dependencies> {
+  if (typeof input === "function") {
+    return createDefinition("singleton", [], () =>
+      input()
+    ) as unknown as DependencyDefinition<Value, "singleton", Dependencies>;
+  }
+
+  return createDefinition("singleton", input.deps, input.factory);
 }
 
-type ValidateDependenciesImpl<
-  Dependencies extends readonly AnyDependencyReference[],
-  Seen extends string = never,
-> = Dependencies extends readonly [infer Head, ...infer Tail]
-  ? Head extends AnyDependencyReference
-    ? DependencyName<Head> extends infer Name
-      ? Name extends string
-        ? Name extends Seen
-          ? readonly [
-              Head & DuplicateDependency<Name>,
-              ...ValidateDependenciesImpl<
-                Tail extends readonly AnyDependencyReference[] ? Tail : [],
-                Seen
-              >,
-            ]
-          : readonly [
-              Head,
-              ...ValidateDependenciesImpl<
-                Tail extends readonly AnyDependencyReference[] ? Tail : [],
-                Seen | Name
-              >,
-            ]
-        : Dependencies
-      : Dependencies
-    : Dependencies
-  : Dependencies;
+export function request<Value>(
+  factory: () => Value
+): DependencyDefinition<Value, "request", readonly []>;
 
-export type ValidateDependencies<
-  Dependencies extends readonly AnyDependencyReference[],
-> = ValidateDependenciesImpl<Dependencies>;
+export function request<
+  const Dependencies extends readonly AnyDependencyReference[],
+  Value,
+>(
+  options: DependencyFactoryOptions<Dependencies, Value>
+): DependencyDefinition<Value, "request", Dependencies>;
 
-const scopeRank: Record<DependencyScope, number> = {
-  request: 1,
-  singleton: 0,
-  transient: 2,
-  value: 0,
-};
-
-const assertScopeCompatibility = (
-  ownerScope: DependencyScope,
-  dependency: AnyDependencyReference
-): void => {
-  if (
-    ownerScope === "singleton" &&
-    scopeRank[dependency.scope] > scopeRank[ownerScope]
-  ) {
-    throw new Error(
-      [
-        `Singleton dependency "${dependency.name}" cannot depend on`,
-        `${dependency.scope}-scoped dependency "${dependency.name}".`,
-      ].join(" ")
-    );
+export function request<
+  const Dependencies extends readonly AnyDependencyReference[],
+  Value,
+>(
+  input: (() => Value) | DependencyFactoryOptions<Dependencies, Value>
+): DependencyDefinition<Value, "request", Dependencies> {
+  if (typeof input === "function") {
+    return createDefinition("request", [], () =>
+      input()
+    ) as unknown as DependencyDefinition<Value, "request", Dependencies>;
   }
-};
 
-const assertDependencyGraph = (root: AnyDependencyReference): void => {
-  const visiting = new Set<object>();
-  const visited = new Set<object>();
-  const path: AnyDependencyReference[] = [];
+  return createDefinition("request", input.deps, input.factory);
+}
 
-  const visit = (dependency: AnyDependencyReference): void => {
-    if (visited.has(dependency)) {
-      return;
-    }
+export function transient<Value>(
+  factory: () => Value
+): DependencyDefinition<Value, "transient", readonly []>;
 
-    if (visiting.has(dependency)) {
-      const index = path.indexOf(dependency);
+export function transient<
+  const Dependencies extends readonly AnyDependencyReference[],
+  Value,
+>(
+  options: DependencyFactoryOptions<Dependencies, Value>
+): DependencyDefinition<Value, "transient", Dependencies>;
 
-      const cycle =
-        index === -1
-          ? [...path, dependency]
-          : [...path.slice(index), dependency];
+export function transient<
+  const Dependencies extends readonly AnyDependencyReference[],
+  Value,
+>(
+  input: (() => Value) | DependencyFactoryOptions<Dependencies, Value>
+): DependencyDefinition<Value, "transient", Dependencies> {
+  if (typeof input === "function") {
+    return createDefinition("transient", [], () =>
+      input()
+    ) as unknown as DependencyDefinition<Value, "transient", Dependencies>;
+  }
 
-      throw new Error(
-        `Circular dependency detected: ${cycle
-          .map((item) => item.name)
-          .join(" -> ")}`
-      );
-    }
+  return createDefinition("transient", input.deps, input.factory);
+}
 
-    visiting.add(dependency);
-    path.push(dependency);
+export const value = <Value>(
+  input: Value
+): DependencyDefinition<Value, "value", readonly []> =>
+  createDefinition("value", [], () => input);
 
-    for (const child of dependency.dependencies) {
-      visit(child);
-    }
-
-    path.pop();
-    visiting.delete(dependency);
-    visited.add(dependency);
-  };
-
-  visit(root);
-};
-
-const resolveDependencyContext = (
-  dependencies: readonly AnyDependencyReference[],
+const resolveDependencies = <
+  const Dependencies extends readonly AnyDependencyReference[],
+>(
+  dependencies: Dependencies,
   context: DependencyResolutionContext
-): Record<string, unknown> => {
+): DependencyContext<Dependencies> => {
   const resolved = Object.create(null) as Record<string, unknown>;
 
   for (const dependency of dependencies) {
     resolved[dependency.name] = dependency.resolve(context);
   }
 
-  return resolved;
+  return resolved as DependencyContext<Dependencies>;
 };
-
-const createDefinition = <
-  const Dependencies extends readonly AnyDependencyReference[],
-  Value,
-  const Scope extends DependencyScope,
->(
-  scope: Scope,
-  deps: Dependencies,
-  factory: (dependencies: DependencyContext<Dependencies>) => Value
-): DependencyDefinition<Dependencies, Value, Scope> => {
-  if (scope === "value" && deps.length > 0) {
-    throw new Error('A "value" dependency cannot declare dependencies.');
-  }
-
-  for (const dependency of deps) {
-    assertScopeCompatibility(scope, dependency);
-  }
-
-  return {
-    __nooh_definition: true,
-    deps,
-    factory,
-    scope,
-  };
-};
-
-export function singleton<Value>(
-  factory: () => Value
-): DependencyDefinition<readonly [], Value, "singleton">;
-
-export function singleton<
-  const Dependencies extends readonly AnyDependencyReference[],
-  Value,
->(
-  options: DependencyDefinitionOptions<Dependencies, Value>
-): DependencyDefinition<Dependencies, Value, "singleton">;
-
-export function singleton<
-  const Dependencies extends readonly AnyDependencyReference[],
-  Value,
->(
-  input: (() => Value) | DependencyDefinitionOptions<Dependencies, Value>
-): DependencyDefinition<Dependencies, Value, "singleton"> {
-  if (typeof input === "function") {
-    return createDefinition("singleton", [], () =>
-      input()
-    ) as unknown as DependencyDefinition<Dependencies, Value, "singleton">;
-  }
-
-  return createDefinition("singleton", input.deps, input.create);
-}
-
-export function request<Value>(
-  factory: () => Value
-): DependencyDefinition<readonly [], Value, "request">;
-
-export function request<
-  const Dependencies extends readonly AnyDependencyReference[],
-  Value,
->(
-  options: DependencyDefinitionOptions<Dependencies, Value>
-): DependencyDefinition<Dependencies, Value, "request">;
-
-export function request<
-  const Dependencies extends readonly AnyDependencyReference[],
-  Value,
->(
-  input: (() => Value) | DependencyDefinitionOptions<Dependencies, Value>
-): DependencyDefinition<Dependencies, Value, "request"> {
-  if (typeof input === "function") {
-    return createDefinition("request", [], () =>
-      input()
-    ) as unknown as DependencyDefinition<Dependencies, Value, "request">;
-  }
-
-  return createDefinition("request", input.deps, input.create);
-}
-
-export function transient<Value>(
-  factory: () => Value
-): DependencyDefinition<readonly [], Value, "transient">;
-
-export function transient<
-  const Dependencies extends readonly AnyDependencyReference[],
-  Value,
->(
-  options: DependencyDefinitionOptions<Dependencies, Value>
-): DependencyDefinition<Dependencies, Value, "transient">;
-
-export function transient<
-  const Dependencies extends readonly AnyDependencyReference[],
-  Value,
->(
-  input: (() => Value) | DependencyDefinitionOptions<Dependencies, Value>
-): DependencyDefinition<Dependencies, Value, "transient"> {
-  if (typeof input === "function") {
-    return createDefinition("transient", [], () =>
-      input()
-    ) as unknown as DependencyDefinition<Dependencies, Value, "transient">;
-  }
-
-  return createDefinition("transient", input.deps, input.create);
-}
-
-export const value = <Value>(
-  input: Value
-): DependencyDefinition<readonly [], Value, "value"> =>
-  createDefinition("value", [], () => input);
 
 const createReference = <
   Name extends string,
-  Dependencies extends readonly AnyDependencyReference[],
   Value,
   Scope extends DependencyScope,
+  const Dependencies extends readonly AnyDependencyReference[],
 >(
   name: Name,
-  definition: DependencyDefinition<Dependencies, Value, Scope>
-): DependencyReference<Name, Value, Scope> => {
+  definition: DependencyDefinition<Value, Scope, Dependencies>
+): DependencyReference<Name, Value, Scope, Dependencies> => {
   let singletonInitialized = false;
   let singletonValue!: Value;
 
-  let reference!: DependencyReference<Name, Value, Scope>;
+  let reference!: DependencyReference<Name, Value, Scope, Dependencies>;
 
   reference = Object.freeze({
     __nooh_dependency: true as const,
 
-    dependencies: definition.deps,
+    dependencies: definition.dependencies,
 
     name,
 
     resolve: (context: DependencyResolutionContext): Value => {
-      if (definition.scope === "singleton" && singletonInitialized) {
+      if (definition.scope === "singleton") {
+        if (!singletonInitialized) {
+          singletonValue = definition.factory(
+            resolveDependencies(definition.dependencies, context)
+          );
+
+          singletonInitialized = true;
+        }
+
         return singletonValue;
       }
 
-      if (definition.scope === "request" && context.cache.has(reference)) {
-        return context.cache.get(reference) as Value;
-      }
-
-      if (context.resolving.has(reference)) {
-        const index = context.stack.indexOf(reference);
-
-        const cycle =
-          index === -1
-            ? [...context.stack, reference]
-            : [...context.stack.slice(index), reference];
-
-        throw new Error(
-          `Circular dependency detected: ${cycle
-            .map((item) => item.name)
-            .join(" -> ")}`
-        );
-      }
-
-      context.resolving.add(reference);
-      context.stack.push(reference);
-
-      try {
-        const dependencies = resolveDependencyContext(definition.deps, context);
-
-        const resolved = definition.factory(
-          dependencies as DependencyContext<Dependencies>
-        );
-
-        if (definition.scope === "singleton") {
-          singletonValue = resolved;
-          singletonInitialized = true;
-        } else if (definition.scope === "request") {
-          context.cache.set(reference, resolved);
+      if (definition.scope === "request") {
+        if (context.cache.has(reference)) {
+          return context.cache.get(reference) as Value;
         }
 
+        const resolved = definition.factory(
+          resolveDependencies(definition.dependencies, context)
+        );
+
+        context.cache.set(reference, resolved);
+
         return resolved;
-      } finally {
-        context.stack.pop();
-        context.resolving.delete(reference);
       }
+
+      return definition.factory(
+        resolveDependencies(definition.dependencies, context)
+      );
     },
 
     scope: definition.scope,
   });
-
-  assertDependencyGraph(reference);
 
   return reference;
 };
@@ -411,9 +275,9 @@ export const container = <
     result[name] = createReference(
       name,
       definition as DependencyDefinition<
-        readonly AnyDependencyReference[],
         DefinitionValue<typeof entry>,
-        DefinitionScope<typeof entry>
+        DefinitionScope<typeof entry>,
+        DefinitionDependencies<typeof entry>
       >
     );
   }
@@ -421,14 +285,80 @@ export const container = <
   return Object.freeze(result) as Container<Entries>;
 };
 
-export const createDependencyResolutionContext =
-  (): DependencyResolutionContext => ({
-    cache: new Map<object, unknown>(),
-    resolving: new Set<object>(),
-    stack: [],
-  });
+export type DependencyName<Dependency> =
+  Dependency extends DependencyReference<
+    infer Name,
+    unknown,
+    DependencyScope,
+    readonly AnyDependencyReference[]
+  >
+    ? Name
+    : never;
 
-export const resolveDependencies = (
-  dependencies: readonly AnyDependencyReference[],
-  context: DependencyResolutionContext
-): Record<string, unknown> => resolveDependencyContext(dependencies, context);
+export type DependencyValue<Dependency> =
+  Dependency extends DependencyReference<
+    string,
+    infer Value,
+    DependencyScope,
+    readonly AnyDependencyReference[]
+  >
+    ? Value
+    : never;
+
+export type DependencyContext<
+  Dependencies extends readonly AnyDependencyReference[],
+> = {
+  [Dependency in Dependencies[number] as DependencyName<Dependency>]: DependencyValue<Dependency>;
+};
+
+export interface DuplicateDependency<Name extends string> {
+  readonly __nooh_dependency_error__: `Duplicate dependency name "${Name}".`;
+}
+
+export interface ReservedDependencyName<Name extends string> {
+  readonly __nooh_dependency_error__: `Dependency name "${Name}" is reserved by the handler context.`;
+}
+
+type ValidateDependenciesImpl<
+  Dependencies extends readonly AnyDependencyReference[],
+  Reserved extends string,
+  Seen extends string = never,
+> = Dependencies extends readonly [infer Head, ...infer Tail]
+  ? Head extends AnyDependencyReference
+    ? DependencyName<Head> extends infer Name
+      ? Name extends string
+        ? Name extends Reserved
+          ? readonly [
+              Head & ReservedDependencyName<Name>,
+              ...ValidateDependenciesImpl<
+                Tail extends readonly AnyDependencyReference[] ? Tail : [],
+                Reserved,
+                Seen
+              >,
+            ]
+          : Name extends Seen
+            ? readonly [
+                Head & DuplicateDependency<Name>,
+                ...ValidateDependenciesImpl<
+                  Tail extends readonly AnyDependencyReference[] ? Tail : [],
+                  Reserved,
+                  Seen
+                >,
+              ]
+            : readonly [
+                Head,
+                ...ValidateDependenciesImpl<
+                  Tail extends readonly AnyDependencyReference[] ? Tail : [],
+                  Reserved,
+                  Seen | Name
+                >,
+              ]
+        : Dependencies
+      : Dependencies
+    : Dependencies
+  : Dependencies;
+
+export type ValidateDependencies<
+  Dependencies extends readonly AnyDependencyReference[],
+  Reserved extends string = never,
+> = ValidateDependenciesImpl<Dependencies, Reserved>;
