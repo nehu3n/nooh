@@ -24,7 +24,6 @@ export type {
   DependencyScope,
   DependencyValue,
   DuplicateDependency,
-  ReservedDependencyName,
   ValidateDependencies,
 } from "@/di";
 export {
