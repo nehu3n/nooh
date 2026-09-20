@@ -163,7 +163,7 @@ const renderMethod = (route: RouteModel): string => {
     "",
     `  const handler: ${prefix}RouteHandler = (c, next) => {`,
     "    const dependencyContext =",
-    "      createDependencyResolutionContext();",
+    "      getDependencyResolutionContext(c);",
     "",
     "    const resolvedDependencies =",
     "      resolveDependencies(",
@@ -224,7 +224,7 @@ export const generateRouterModule = (
     `import { sValidator } from "@hono/standard-validator";`,
     `import type { Handler, MiddlewareHandler } from "hono";`,
     "import {",
-    "  createDependencyResolutionContext,",
+    "  getDependencyResolutionContext,",
     "  resolveDependencies,",
     `} from ${JSON.stringify(
       relativeModuleSpecifier(moduleId, dependencyModuleId)
