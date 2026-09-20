@@ -1,0 +1,188 @@
+---
+import { highlightCode } from "blume/markdown";
+
+const depsCode = `import { container } from "nooh";
+import { UsersRepository } from "...";
+
+export const db = container({
+  users: () => new UsersRepository(),
+});`;
+
+const routeCode = `import { post } from "@router/users/[id]";
+import { db } from "@deps/db";
+
+export default post({
+  deps: [db.users],
+  handler: async ({ c, users }) => {
+    const user = await users.getById(c.req.param("id"));
+
+    return c.json(user);
+  },
+});`;
+
+const depsCodeHtml = await highlightCode(depsCode, "ts", { icons: false });
+const routeCodeHtml = await highlightCode(routeCode, "ts", { icons: false });
+---
+
+<section class="w-full py-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <!-- Header info -->
+    <div class="mb-8">
+      <span
+        class="text-[11px] font-mono font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase"
+      >
+        DEPENDENCY INJECTION
+      </span>
+      <h2
+        class="text-2xl sm:text-3xl font-bold text-black dark:text-white tracking-tight mt-1"
+      >
+        Type-safe dependency injection built-in.
+      </h2>
+      <p
+        class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed max-w-lg mt-2 font-sans"
+      >
+        Declare your dependencies in modular containers and inject them directly
+        into route handlers. Context properties are automatically typed with
+        static error detection for duplicates and invalid references.
+      </p>
+    </div>
+
+    <!-- Side by Side Code Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Left: DEPENDENCY CONTAINER -->
+      <div
+        class="lg:col-span-5 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            DEPENDENCY CONTAINER
+          </span>
+          <span class="text-gray-400 dark:text-gray-500">src/deps/db.ts</span>
+        </div>
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={depsCodeHtml} />
+        </div>
+      </div>
+
+      <!-- Right: ROUTE HANDLER -->
+      <div
+        class="lg:col-span-7 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            ROUTE HANDLER
+          </span>
+          <span class="text-gray-400 dark:text-gray-500"
+            >src/routes/users/[id].post.ts</span
+          >
+        </div>
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={routeCodeHtml} />
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Highlights -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Auto-typed Context
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Injected dependencies like
+          <code
+            class="font-mono text-[10px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+            >users</code
+          >
+          are automatically typed on the handler argument.
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Production Safety
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Detects duplicate dependencies, invalid references, and unhandled
+          errors at compile time.
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"
+            ></path>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Zero Runtime Overhead
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Dependencies are resolved during build time into standard Hono
+          application code.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

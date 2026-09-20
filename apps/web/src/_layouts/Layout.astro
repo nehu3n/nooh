@@ -1,0 +1,63 @@
+---
+import "@styles/index.css";
+
+import Footer from "@components/Footer.astro";
+import Header from "@components/Header.astro";
+
+interface Props {
+  description?: string;
+  title?: string;
+}
+
+const {
+  title = "Nooh — Compile-time type-safe backend",
+  description = "File-based routing, type-safe composition, dependency injection, middleware and typed errors - compiled into native Hono.",
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>{title}</title>
+    <meta content={description} name="description">
+    <link href="/icon.webp" rel="icon" type="image/webp">
+    <link href="/icon.ico" rel="icon" type="image/x-icon">
+
+    <script is:inline>
+      (() => {
+        const storedTheme =
+          typeof localStorage === "undefined"
+            ? null
+            : localStorage.getItem("theme");
+
+        const prefersDark =
+          typeof window !== "undefined" &&
+          window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+
+        if (typeof storedTheme === "string") {
+          document.documentElement.dataset.theme = storedTheme;
+          return;
+        }
+
+        if (prefersDark) {
+          document.documentElement.dataset.theme = "dark";
+          return;
+        }
+        
+        document.documentElement.dataset.theme = "light";
+      })();
+    </script>
+  </head>
+
+  <body
+    class="min-h-screen flex flex-col bg-[#FAF9F6] dark:bg-[#0A0A0C] text-[#111111] dark:text-[#F3F4F6] selection:bg-black selection:text-white dark:selection:bg-white dark:selection:text-black font-sans transition-colors duration-200"
+  >
+    <Header />
+    <main class="flex-1 w-full">
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

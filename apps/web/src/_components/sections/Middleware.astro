@@ -1,0 +1,214 @@
+---
+import { highlightCode } from "blume/markdown";
+
+const groupMiddlewareCode = `import logger from "@middleware/logger";
+import { group } from "@nooh-ts/nooh";
+
+// applies to all routes under /users/*
+export default group({
+  middleware: [logger],
+});`;
+
+const middlewareDefCode = `import { middleware } from "@router/middleware";
+
+export default middleware(async (c, next) => {
+  const start = Date.now();
+
+  await next();
+
+  const duration = Date.now() - start;
+  console.log(\`\${c.req.method} \${c.req.path} \${c.res.status} \${duration}ms\`);
+});`;
+
+const groupMiddlewareHtml = await highlightCode(groupMiddlewareCode, "ts", {
+  icons: false,
+});
+const middlewareDefHtml = await highlightCode(middlewareDefCode, "ts", {
+  icons: false,
+});
+---
+
+<section class="w-full py-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <!-- Header info -->
+    <div class="mb-8">
+      <span
+        class="text-[11px] font-mono font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase"
+      >
+        COMPOSEABLE MIDDLEWARE
+      </span>
+      <h2
+        class="text-2xl sm:text-3xl font-bold text-black dark:text-white tracking-tight mt-1"
+      >
+        Scoped route & group middleware.
+      </h2>
+      <p
+        class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed max-w-lg mt-2 font-sans"
+      >
+        Create type-safe middleware with the
+        <code
+          class="font-mono text-[11px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+          >@router/middleware</code
+        >
+        helper. Apply them per route or cascade them across entire route
+        subtrees with
+        <code
+          class="font-mono text-[11px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+          >$.ts</code
+        >
+        group files.
+      </p>
+    </div>
+
+    <!-- Side by Side Code Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Left: GROUP MIDDLEWARE -->
+      <div
+        class="lg:col-span-6 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            GROUP MIDDLEWARE
+          </span>
+          <span class="text-gray-400 dark:text-gray-500"
+            >src/routes/users/$.ts</span
+          >
+        </div>
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={groupMiddlewareHtml} />
+        </div>
+      </div>
+
+      <!-- Right: MIDDLEWARE DEFINITION -->
+      <div
+        class="lg:col-span-6 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            MIDDLEWARE DEFINITION
+          </span>
+          <span class="text-gray-400 dark:text-gray-500"
+            >src/middleware/logger.ts</span
+          >
+        </div>
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={middlewareDefHtml} />
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Highlights -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+            ></path>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            File-System Grouping
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          <code
+            class="font-mono text-[10px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+            >$.ts</code
+          >
+          files represent route groups, easily scoping middleware across entire
+          subtrees.
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Type-Safe Context
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Standard Hono context
+          <code
+            class="font-mono text-[10px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+            >c</code
+          >
+          and
+          <code
+            class="font-mono text-[10px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+            >next()</code
+          >
+          functions with full type inference and environment bindings.
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <polyline points="17 1 21 5 17 9"></polyline>
+            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+            <polyline points="7 23 3 19 7 15"></polyline>
+            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Cascading Execution
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Group middleware executes before route-level middleware, providing
+          predictable, hierarchical pipeline execution.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

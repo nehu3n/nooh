@@ -1,0 +1,190 @@
+---
+import { highlightCode } from "blume/markdown";
+
+const whatYouWrite = `import { post } from "@router/users/[id]";
+
+import { db } from "@deps/db";
+import { UserNotFound } from "@errors";
+import logger from "@middleware/logger";
+
+export default post({
+  deps: [db.users],
+  errors: { notFound: UserNotFound },
+  middleware: [logger],
+
+  handler: async ({ users, error, c }) => {
+    const user = await users.getById(c.req.param("id"));
+
+    if (!user) {
+      throw error.notFound();
+    }
+
+    return c.json(user);
+  },
+});`;
+
+const generatedHonoCode = `// Conceptual generated output
+
+import { Hono } from "hono";
+import type { App } from "./types.js";
+
+import { UsersRepository } from "../src/deps/db.js";
+import UserNotFound from "../src/errors/UserNotFound.js";
+import logger from "../src/middleware/logger.js";
+
+const users = new UsersRepository();
+
+const app = new Hono<App>();
+
+app.post("/users/:id", logger, async (c) => {
+  const user = await users.getById(
+    c.req.param("id")
+  );
+
+  if (!user) {
+    throw new UserNotFound();
+  }
+
+  return c.json(user);
+});
+
+export default app;`;
+
+const whatYouWriteHtml = await highlightCode(whatYouWrite, "ts", {
+  icons: false,
+});
+
+const generatedHonoHtml = await highlightCode(generatedHonoCode, "ts", {
+  icons: false,
+});
+---
+
+<section class="w-full py-16">
+  <div class="max-w-6xl mx-auto px-6">
+
+    <!-- Header info -->
+    <div class="mb-8">
+      <span
+        class="text-[11px] font-mono font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase"
+      >
+        IT COMPILES AWAY
+      </span>
+
+      <h2
+        class="text-2xl sm:text-3xl font-bold text-black dark:text-white tracking-tight mt-1"
+      >
+        Write Nooh. Ship Hono.
+      </h2>
+
+      <p
+        class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed max-w-lg mt-2 font-sans"
+      >
+        Nooh uses your routes, dependencies, middleware and errors as compile-time
+        composition. The generated application is ordinary Hono code with no
+        Nooh runtime.
+      </p>
+    </div>
+
+    <!-- Side by Side Code comparison -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+
+      <!-- Left: WHAT YOU WRITE -->
+      <div
+        class="lg:col-span-5 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            WHAT YOU WRITE
+          </span>
+
+          <span class="text-gray-400 dark:text-gray-500">
+            src/routes/users/[id].post.ts
+          </span>
+        </div>
+
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={whatYouWriteHtml} />
+        </div>
+      </div>
+
+      <!-- Center Transition Badge -->
+      <div
+        class="lg:col-span-2 flex flex-col items-center justify-center py-4 space-y-1"
+      >
+        <img
+          alt="Nooh logo"
+          class="w-7 h-7 object-contain mb-1"
+          height="28"
+          src="/icon.webp"
+          width="28"
+        />
+
+        <span
+          class="font-bold text-xs text-black dark:text-white tracking-wider font-sans"
+        >
+          NOOH
+        </span>
+
+        <span
+          class="text-[10px] font-mono text-gray-500 dark:text-gray-400 text-center"
+        >
+          Compile time
+        </span>
+
+        <span class="text-gray-400 dark:text-gray-600 text-base font-mono">
+          →
+        </span>
+
+        <span
+          class="text-[9px] font-mono text-gray-400 dark:text-gray-500 text-center max-w-[100px]"
+        >
+          static composition
+        </span>
+      </div>
+
+      <!-- Right: GENERATED HONO CODE -->
+      <div
+        class="lg:col-span-5 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            GENERATED HONO
+          </span>
+
+          <span class="text-gray-400 dark:text-gray-500">
+            .nooh/*
+          </span>
+        </div>
+
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={generatedHonoHtml} />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Generated modules hint -->
+    <div
+      class="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-mono text-gray-400 dark:text-gray-500"
+    >
+      <span>.nooh/router/*</span>
+      <span>→</span>
+      <span>.nooh/groups/*</span>
+      <span>→</span>
+      <span>.nooh/app.ts</span>
+    </div>
+
+  </div>
+</section>

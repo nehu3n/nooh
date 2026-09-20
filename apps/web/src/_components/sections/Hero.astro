@@ -1,0 +1,145 @@
+---
+import { highlightCode } from "blume/markdown";
+
+const honoSnippetHtml = await highlightCode(
+  "app.get('/users/:id', ...)",
+  "ts",
+  { icons: false }
+);
+---
+
+<section class="w-full pt-16 md:pt-24 pb-12">
+  <div
+    class="max-w-6xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
+  >
+    <!-- Left Hero Column -->
+    <div class="lg:col-span-7 flex flex-col items-start space-y-6">
+      <h1
+        class="text-4xl sm:text-5xl lg:text-[54px] font-bold text-black dark:text-white tracking-tight leading-[1.08]"
+      >
+        Build Hono APIs.<br>
+        Nooh compiles the rest.
+      </h1>
+
+      <p
+        class="text-gray-600 dark:text-gray-400 text-sm sm:text-base leading-relaxed max-w-lg font-sans"
+      >
+        File-based routing, type-safe composition,<br class="hidden sm:inline">
+        dependency injection, middleware and typed errors —<br
+          class="hidden sm:inline"
+        >
+        compiled into native Hono.
+      </p>
+
+      <div class="flex items-center gap-3 pt-2">
+        <a
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-[#0f0f10] dark:bg-white text-white dark:text-black text-xs font-semibold rounded hover:bg-black dark:hover:bg-gray-200 transition-all shadow-xs"
+          href="/docs"
+        >
+          <span>Get started</span>
+          <svg
+            aria-hidden="true"
+            class="w-3.5 h-3.5 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+        </a>
+
+        <a
+          class="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#141418] border border-gray-300 dark:border-white/10 text-gray-800 dark:text-gray-200 text-xs font-semibold rounded hover:border-gray-400 dark:hover:border-white/20 hover:bg-gray-50 dark:hover:bg-white/5 transition-all shadow-2xs"
+          href="https://github.com/nehu3n/nooh"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 fill-current"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"
+            />
+          </svg>
+          <span>View on GitHub</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Right Flow Diagram -->
+    <div
+      class="lg:col-span-5 flex flex-col items-center justify-center space-y-3"
+    >
+      <!-- Box 1 -->
+      <div
+        class="w-full max-w-sm bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-3 text-center shadow-xs"
+      >
+        <span
+          class="font-mono text-xs text-gray-700 dark:text-gray-300 font-medium"
+          >src/routes/users/[id].get.ts</span
+        >
+      </div>
+
+      <!-- Arrow 1 -->
+      <div class="text-gray-400 dark:text-gray-600 text-sm font-mono">↓</div>
+
+      <!-- Box 2 -->
+      <div
+        class="w-full max-w-sm bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg py-4 px-6 flex items-center justify-center gap-3 shadow-xs"
+      >
+        <img
+          alt="Nooh"
+          class="w-6 h-6 object-contain"
+          height="24"
+          src="/icon.webp"
+          width="24"
+        >
+        <span
+          class="font-bold text-lg text-black dark:text-white tracking-wider font-sans"
+          >NOOH</span
+        >
+      </div>
+
+      <!-- Arrow 2 -->
+      <div class="text-gray-400 dark:text-gray-600 text-sm font-mono">↓</div>
+
+      <!-- Box 3 -->
+      <div
+        class="w-full max-w-sm bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-3 shadow-xs"
+      >
+        <div
+          class="text-[11px] font-mono text-gray-400 dark:text-gray-500 mb-1"
+        >
+          Hono
+        </div>
+        <div
+          class="font-mono text-xs font-medium overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={honoSnippetHtml} />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Divider / Marquee bar -->
+  <div
+    class="mt-16 w-full border-t border-b border-gray-200/80 dark:border-white/10 py-4 bg-[#FAF9F6] dark:bg-[#0A0A0C]"
+  >
+    <div
+      class="max-w-6xl mx-auto px-6 flex items-center justify-center gap-3 sm:gap-6 text-[10px] sm:text-xs font-mono font-medium tracking-widest text-gray-500 dark:text-gray-400 uppercase flex-wrap"
+    >
+      <span>COMPILE-TIME</span>
+      <span class="text-gray-300 dark:text-gray-700">·</span>
+      <span>TYPE-SAFE</span>
+      <span class="text-gray-300 dark:text-gray-700">·</span>
+      <span>ZERO DEPENDENCY</span>
+      <span class="text-gray-300 dark:text-gray-700">·</span>
+      <span>BUILT ON Hono</span>
+    </div>
+  </div>
+</section>

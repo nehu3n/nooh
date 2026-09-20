@@ -1,0 +1,217 @@
+---
+import { highlightCode } from "blume/markdown";
+
+const errorDefCode = `export class UserNotFound extends Error {
+  constructor(public userId: string) {
+    super(\`User \${userId} not found\`);
+  }
+}
+
+export class UnauthorizedAccess extends Error {
+  constructor() {
+    super("Unauthorized access");
+  }
+}`;
+
+const errorRouteCode = `import { get } from "@router/users/[id]";
+
+import { db } from "@deps/db";
+import { UserNotFound, UnauthorizedAccess } from "@errors/user";
+
+export default get({
+  deps: [db.users],
+  errors: {
+    notFound: UserNotFound,
+    unauthorized: UnauthorizedAccess,
+  },
+  handler: async ({ c, users, errors }) => {
+    const id = c.req.param("id");
+    const user = await users.getById(id);
+
+    // strongly typed error factory
+    if (!user) throw errors.notFound(id);
+    
+    return c.json(user);
+  },
+});`;
+
+const errorDefHtml = await highlightCode(errorDefCode, "ts", { icons: false });
+const errorRouteHtml = await highlightCode(errorRouteCode, "ts", {
+  icons: false,
+});
+---
+
+<section class="w-full py-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <!-- Header info -->
+    <div class="mb-8">
+      <span
+        class="text-[11px] font-mono font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase"
+      >
+        TYPED ERROR HANDLING
+      </span>
+      <h2
+        class="text-2xl sm:text-3xl font-bold text-black dark:text-white tracking-tight mt-1"
+      >
+        Declarative, fully-typed error helpers.
+      </h2>
+      <p
+        class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed max-w-lg mt-2 font-sans"
+      >
+        Declare any class extending
+        <code
+          class="font-mono text-[11px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+          >Error</code
+        >
+        in your route signature. Error factories are automatically bound to the
+        handler context with full parameter inference and minimal runtime cost.
+      </p>
+    </div>
+
+    <!-- Side by Side Code Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <!-- Left: ERROR DEFINITION -->
+      <div
+        class="lg:col-span-5 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            CUSTOM ERRORS
+          </span>
+          <span class="text-gray-400 dark:text-gray-500"
+            >src/errors/user.ts</span
+          >
+        </div>
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={errorDefHtml} />
+        </div>
+      </div>
+
+      <!-- Right: ROUTE HANDLER -->
+      <div
+        class="lg:col-span-7 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
+      >
+        <div
+          class="bg-gray-50/80 dark:bg-white/5 px-4 py-2.5 border-b border-gray-200/80 dark:border-white/10 flex items-center justify-between font-mono text-[11px]"
+        >
+          <span
+            class="font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide"
+          >
+            ROUTE HANDLER
+          </span>
+          <span class="text-gray-400 dark:text-gray-500"
+            >src/routes/users/[id].get.ts</span
+          >
+        </div>
+        <div
+          class="p-4 font-mono text-[11px] sm:text-xs leading-relaxed overflow-x-auto [&_pre]:m-0 [&_pre]:border-0 [&_pre]:bg-transparent [&_pre]:p-0"
+        >
+          <Fragment set:html={errorRouteHtml} />
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature Highlights -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+            ></path>
+            <line x1="12" x2="12" y1="9" y2="13"></line>
+            <line x1="12" x2="12.01" y1="17" y2="17"></line>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Typed Error Factory
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Declared errors map directly to
+          <code
+            class="font-mono text-[10px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+            >errors.&lt;key&gt;()</code
+          >
+          helpers with inferred constructor parameters.
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Standard Error Support
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Use any class extending
+          <code
+            class="font-mono text-[10px] bg-gray-100 dark:bg-white/10 px-1 py-0.5 rounded text-gray-800 dark:text-gray-200"
+            >Error</code
+          >
+          with full custom constructor arguments support.
+        </p>
+      </div>
+
+      <div
+        class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-4 shadow-2xs"
+      >
+        <div class="flex items-center gap-2 mb-1.5">
+          <svg
+            aria-hidden="true"
+            class="w-4 h-4 text-gray-800 dark:text-gray-200 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+          <h3 class="font-bold text-xs text-black dark:text-white">
+            Minimal Runtime Cost
+          </h3>
+        </div>
+        <p
+          class="text-[11px] text-gray-500 dark:text-gray-400 leading-normal pl-6"
+        >
+          Compiles directly into optimized standard logic without additional
+          runtime abstraction overhead.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

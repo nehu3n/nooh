@@ -2,7 +2,7 @@ import { defineConfig } from "blume";
 
 export default defineConfig({
   content: {
-    pages: "pages",
+    pages: "src",
     root: "docs",
   },
   description:

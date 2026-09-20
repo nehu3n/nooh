@@ -4,7 +4,13 @@
     "noEmit": true,
     "isolatedDeclarations": false,
     "allowJs": true,
-    "checkJs": true
+    "checkJs": true,
+    "paths": {
+      "@components/*": ["./src/_components/*"],
+      "@sections/*": ["./src/_components/sections/*"],
+      "@layouts/*": ["./src/_layouts/*"],
+      "@styles/*": ["./styles/*"]
+    }
   },
-  "include": ["blume.config.ts", "docs/**/*.ts", "docs/**/*.tsx"]
+  "include": ["blume.config.ts", "docs/**/*.ts", "docs/**/*.tsx", "src/**/*"]
 }

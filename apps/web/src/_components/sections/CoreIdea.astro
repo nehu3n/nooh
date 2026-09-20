@@ -1,0 +1,212 @@
+---
+---
+
+<section class="w-full py-16">
+  <div class="max-w-6xl mx-auto px-6">
+    <!-- Header info -->
+    <div class="mb-8">
+      <span
+        class="text-[11px] font-mono font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase"
+      >
+        THE CORE IDEA
+      </span>
+      <h2
+        class="text-2xl sm:text-3xl font-bold text-black dark:text-white tracking-tight mt-1"
+      >
+        Your filesystem is your router.
+      </h2>
+      <p
+        class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed max-w-lg mt-2 font-sans"
+      >
+        Your route structure is derived from the filesystem and compiled into
+        normal Hono routes. Nooh reads your files, analyzes your types and
+        generates a Hono app at build time.
+      </p>
+    </div>
+
+    <!-- 3-Step Flow Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
+      <!-- Card 1: Filesystem -->
+      <div
+        class="md:col-span-4 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-5 shadow-2xs h-full flex flex-col"
+      >
+        <div
+          class="text-xs font-mono font-semibold text-gray-800 dark:text-gray-200 pb-3 mb-3 border-b border-gray-100 dark:border-white/5"
+        >
+          Filesystem
+        </div>
+        <div
+          class="font-mono text-[12px] text-gray-700 dark:text-gray-300 leading-relaxed space-y-1"
+        >
+          <div
+            class="flex items-center gap-1.5 text-gray-500 dark:text-gray-400"
+          >
+            <svg
+              aria-hidden="true"
+              class="w-3.5 h-3.5 stroke-current"
+              fill="none"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+              ></path>
+            </svg>
+            <span>src/</span>
+          </div>
+          <div
+            class="pl-4 flex items-center gap-1.5 text-gray-500 dark:text-gray-400"
+          >
+            <span class="text-gray-300 dark:text-gray-600">└─</span>
+            <svg
+              aria-hidden="true"
+              class="w-3.5 h-3.5 stroke-current"
+              fill="none"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+              ></path>
+            </svg>
+            <span>routes/</span>
+          </div>
+          <div class="pl-9 flex items-center gap-1.5">
+            <span class="text-gray-300 dark:text-gray-600">├─</span>
+            <span class="text-gray-700 dark:text-gray-300">index.get.ts</span>
+          </div>
+          <div
+            class="pl-9 flex items-center gap-1.5 text-gray-500 dark:text-gray-400"
+          >
+            <span class="text-gray-300 dark:text-gray-600">└─</span>
+            <svg
+              aria-hidden="true"
+              class="w-3.5 h-3.5 stroke-current"
+              fill="none"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+              ></path>
+            </svg>
+            <span>users/</span>
+          </div>
+          <div class="pl-14 flex items-center gap-1.5">
+            <span class="text-gray-300 dark:text-gray-600">├─</span>
+            <span class="text-gray-700 dark:text-gray-300">index.get.ts</span>
+          </div>
+          <div class="pl-14 flex items-center gap-1.5">
+            <span class="text-gray-300 dark:text-gray-600">├─</span>
+            <span class="text-gray-700 dark:text-gray-300">[id].get.ts</span>
+          </div>
+          <div class="pl-14 flex items-center gap-1.5">
+            <span class="text-gray-300 dark:text-gray-600">└─</span>
+            <span class="text-gray-700 dark:text-gray-300">$.ts</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow 1 -->
+      <div
+        class="hidden md:flex md:col-span-1 justify-center text-gray-400 dark:text-gray-600 text-lg font-mono"
+      >
+        →
+      </div>
+
+      <!-- Card 2: Nooh Compiler -->
+      <div
+        class="md:col-span-3 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-5 shadow-2xs h-full flex flex-col"
+      >
+        <div
+          class="flex items-center gap-2 pb-3 mb-4 border-b border-gray-100 dark:border-white/5"
+        >
+          <img
+            alt="Nooh logo"
+            class="w-4 h-4 object-contain"
+            height="16"
+            src="/icon.webp"
+            width="16"
+          >
+          <span
+            class="text-xs font-mono font-semibold text-gray-900 dark:text-gray-100"
+            >Nooh Compiler</span
+          >
+        </div>
+        <div
+          class="space-y-2.5 font-sans text-xs text-gray-700 dark:text-gray-300"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400 dark:text-gray-500 font-mono text-xs"
+              >✓</span
+            >
+            <span>Parse files</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400 dark:text-gray-500 font-mono text-xs"
+              >✓</span
+            >
+            <span>Infer types</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400 dark:text-gray-500 font-mono text-xs"
+              >✓</span
+            >
+            <span>Build routes</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400 dark:text-gray-500 font-mono text-xs"
+              >✓</span
+            >
+            <span>Generate Hono app</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Arrow 2 -->
+      <div
+        class="hidden md:flex md:col-span-1 justify-center text-gray-400 dark:text-gray-600 text-lg font-mono"
+      >
+        →
+      </div>
+
+      <!-- Card 3: Hono Routes -->
+      <div
+        class="md:col-span-2 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-5 shadow-2xs h-full flex flex-col"
+      >
+        <div
+          class="text-xs font-mono font-semibold text-gray-800 dark:text-gray-200 pb-3 mb-3 border-b border-gray-100 dark:border-white/5"
+        >
+          Hono Routes
+        </div>
+        <div
+          class="font-mono text-xs space-y-2 text-gray-800 dark:text-gray-200"
+        >
+          <div class="flex items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium"
+              >GET</span
+            >
+            <span class="text-gray-800 dark:text-gray-200">/</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium"
+              >GET</span
+            >
+            <span class="text-gray-800 dark:text-gray-200">/users</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-gray-500 dark:text-gray-400 font-medium"
+              >GET</span
+            >
+            <span class="text-gray-800 dark:text-gray-200">/users/:id</span>
+          </div>
+          <div
+            class="text-gray-400 dark:text-gray-600 font-medium tracking-widest pl-1"
+          >
+            ...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

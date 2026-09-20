@@ -1,0 +1,131 @@
+---
+---
+
+<header
+  class="w-full border-b border-gray-200/60 dark:border-white/10 bg-[#FAF9F6]/90 dark:bg-[#0A0A0C]/90 backdrop-blur-md sticky top-0 z-50 transition-colors duration-200"
+>
+  <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+    <!-- Left logo & primary nav -->
+    <div class="flex items-center gap-8">
+      <a class="flex items-center gap-2.5 group" href="/">
+        <img
+          alt="Nooh logo"
+          class="w-6 h-6 object-contain rounded-sm"
+          height="24"
+          src="/icon.webp"
+          width="24"
+        >
+        <span
+          class="font-bold text-lg text-black dark:text-white tracking-tight"
+          >nooh</span
+        >
+      </a>
+
+      <nav
+        class="hidden md:flex items-center gap-6 text-xs text-gray-600 dark:text-gray-400 font-medium"
+      >
+        <a
+          class="hover:text-black dark:hover:text-white transition-colors"
+          href="/docs"
+          >Docs</a
+        >
+        <a
+          class="hover:text-black dark:hover:text-white transition-colors"
+          href="https://github.com/nehu3n/nooh"
+          rel="noopener noreferrer"
+          target="_blank"
+          >GitHub</a
+        >
+        <a
+          class="hover:text-black dark:hover:text-white transition-colors"
+          href="/changelog"
+          >Changelog</a
+        >
+      </nav>
+    </div>
+
+    <!-- Right Controls (Theme Toggle & CTA button) -->
+    <div class="flex items-center gap-3">
+      <!-- Theme Switch Button -->
+      <button
+        aria-label="Toggle theme"
+        class="p-2 text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white rounded-lg border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 transition-all focus:outline-none"
+        id="theme-toggle"
+        type="button"
+      >
+        <!-- Sun icon (shown in dark mode) -->
+        <svg
+          aria-hidden="true"
+          class="w-4 h-4 hidden dark:block stroke-current"
+          fill="none"
+          id="theme-toggle-sun-icon"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" x2="12" y1="1" y2="3"></line>
+          <line x1="12" x2="12" y1="21" y2="23"></line>
+          <line x1="4.22" x2="5.64" y1="4.22" y2="5.64"></line>
+          <line x1="18.36" x2="19.78" y1="18.36" y2="19.78"></line>
+          <line x1="1" x2="3" y1="12" y2="12"></line>
+          <line x1="21" x2="23" y1="12" y2="12"></line>
+          <line x1="4.22" x2="5.64" y1="19.78" y2="18.36"></line>
+          <line x1="18.36" x2="19.78" y1="5.64" y2="4.22"></line>
+        </svg>
+
+        <!-- Moon icon (shown in light mode) -->
+        <svg
+          aria-hidden="true"
+          class="w-4 h-4 block dark:hidden stroke-current"
+          fill="none"
+          id="theme-toggle-moon-icon"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+
+      <!-- Get Started Button -->
+      <a
+        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#0f0f10] dark:bg-white text-white dark:text-black text-xs font-semibold rounded hover:bg-black dark:hover:bg-gray-200 transition-all shadow-xs"
+        href="/docs"
+      >
+        <span>Get started</span>
+        <svg
+          aria-hidden="true"
+          class="w-3.5 h-3.5 stroke-current"
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M5 12h14"></path>
+          <path d="m12 5 7 7-7 7"></path>
+        </svg>
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const toggleBtn = document.getElementById("theme-toggle");
+
+  toggleBtn?.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.contains("dark");
+    if (isDark) {
+      document.documentElement.classList.remove("dark");
+      document.documentElement.dataset.theme = "light";
+      localStorage.setItem("theme", "light");
+    } else {
+      document.documentElement.classList.add("dark");
+      document.documentElement.dataset.theme = "dark";
+      localStorage.setItem("theme", "dark");
+    }
+  });
+</script>

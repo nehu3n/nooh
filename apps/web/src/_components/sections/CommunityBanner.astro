@@ -1,0 +1,86 @@
+---
+const response = await fetch("https://api.github.com/repos/nehu3n/nooh", {
+  headers: {
+    Accept: "application/vnd.github+json",
+  },
+});
+
+if (!response.ok) {
+  throw new Error(`GitHub API returned ${response.status}`);
+}
+
+const repo = await response.json();
+
+const stars = repo.stargazers_count;
+---
+
+<section class="w-full py-8">
+  <div class="max-w-6xl mx-auto px-6">
+    <div
+      class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs"
+    >
+      <!-- Left info -->
+      <div class="flex items-start sm:items-center gap-4">
+        <img
+          alt="Nooh logo"
+          class="w-7 h-7 object-contain mt-0.5 sm:mt-0"
+          height="28"
+          src="/icon.webp"
+          width="28"
+        >
+        <div>
+          <h3
+            class="font-bold text-base sm:text-lg text-black dark:text-white tracking-tight"
+          >
+            Open source and community driven.
+          </h3>
+          <p
+            class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-sans"
+          >
+            Nooh is free, open source and built for the community.
+          </p>
+        </div>
+      </div>
+
+      <!-- Right stats & button -->
+      <div class="flex items-center gap-6 flex-wrap sm:flex-nowrap">
+        <a
+          class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f0f10] dark:bg-white text-white dark:text-black text-xs font-semibold rounded hover:bg-black dark:hover:bg-gray-200 transition-all shadow-xs"
+          href="https://github.com/nehu3n/nooh"
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <span>View on GitHub</span>
+          <svg
+            aria-hidden="true"
+            class="w-3.5 h-3.5 stroke-current"
+            fill="none"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path d="M5 12h14"></path>
+            <path d="m12 5 7 7-7 7"></path>
+          </svg>
+        </a>
+
+        <div class="border-l border-gray-200 dark:border-white/10 pl-6 py-1">
+          <div class="text-[10px] font-mono text-gray-400 dark:text-gray-500">
+            GitHub
+          </div>
+          <div class="font-bold text-xs text-black dark:text-white">
+            {stars}+ ★
+          </div>
+        </div>
+
+        <div class="border-l border-gray-200 dark:border-white/10 pl-6 py-1">
+          <div class="text-[10px] font-mono text-gray-400 dark:text-gray-500">
+            Contributors
+          </div>
+          <div class="font-bold text-xs text-black dark:text-white">100+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
