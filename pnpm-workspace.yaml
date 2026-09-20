@@ -3,6 +3,8 @@ packages:
   - packages/*
   - example
 
+prefer-symlinked-executables: true
+
 allowBuilds:
   '@scarf/scarf': true
   esbuild: true

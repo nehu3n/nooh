@@ -141,7 +141,13 @@ export interface Diagnostic {
   readonly severity: DiagnosticSeverity;
 }
 
-export type ModuleKind = "types" | "router" | "middleware" | "group" | "app";
+export type ModuleKind =
+  | "types"
+  | "router"
+  | "middleware"
+  | "group"
+  | "di"
+  | "app";
 
 export interface ModulePlan {
   readonly groupId?: string;

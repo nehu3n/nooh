@@ -18,6 +18,10 @@ export const plan = (
       kind: "types",
     },
     {
+      id: modulePath(normalizedOutputRoot, "router/di"),
+      kind: "di",
+    },
+    {
       id: modulePath(normalizedOutputRoot, "router/middleware"),
       kind: "middleware",
     },

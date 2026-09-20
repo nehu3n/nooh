@@ -4,7 +4,8 @@
     "isolatedDeclarations": false,
     "paths": {
       "@router/*": ["./.nooh/router/*"],
-      "@middleware/*": ["./src/middleware/*"]
+      "@middleware/*": ["./src/middleware/*"],
+      "@deps/*": ["./src/deps/*"]
     }
   },
   "include": ["src/**/*.ts", ".nooh/**/*.ts", "nooh.config.ts"]

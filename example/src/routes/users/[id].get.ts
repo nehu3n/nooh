@@ -1,7 +1,15 @@
+import { db } from "@deps/db";
 import { get } from "@router/users/[id]";
 
-export default get((c) => {
-  const id = c.req.param("id"); // id it's type-safe!
+export default get({
+  deps: [db.posts],
 
-  return c.json({ id });
+  handler: ({ c, posts }) => {
+    const id = c.req.param("id");
+
+    return c.json({
+      id,
+      posts,
+    });
+  },
 });
