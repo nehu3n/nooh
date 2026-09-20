@@ -24,11 +24,14 @@ export type {
   DependencyScope,
   DependencyValue,
   DuplicateDependency,
+  InvalidDependencyScope,
   ReservedDependencyName,
   ValidateDependencies,
+  ValidateDependencyScopes,
 } from "@/di";
 export {
   container,
+  DependencyCycleError,
   request,
   singleton,
   transient,

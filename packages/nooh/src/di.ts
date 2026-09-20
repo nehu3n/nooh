@@ -1,8 +1,20 @@
-/** biome-ignore-all lint/suspicious/noExplicitAny: ... */
 export type DependencyScope = "singleton" | "request" | "transient" | "value";
 
 export interface DependencyResolutionContext {
   readonly cache: Map<object, unknown>;
+  readonly resolving: Set<object>;
+  readonly stack: string[];
+}
+
+export class DependencyCycleError extends Error {
+  readonly path: readonly string[];
+
+  constructor(path: readonly string[]) {
+    super(`Circular dependency detected: ${path.join(" -> ")}.`);
+
+    this.name = "DependencyCycleError";
+    this.path = path;
+  }
 }
 
 export interface DependencyDefinition<
@@ -36,17 +48,13 @@ export type AnyDependencyReference = DependencyReference<
   readonly AnyDependencyReference[]
 >;
 
-type AnyDependencyDefinition = DependencyDefinition<any, DependencyScope, any>;
+type AnyDependencyDefinition = DependencyDefinition<
+  unknown,
+  DependencyScope,
+  readonly AnyDependencyReference[]
+>;
 
 export type DependencyEntry = AnyDependencyDefinition | (() => unknown);
-
-interface DependencyFactoryOptions<
-  Dependencies extends readonly AnyDependencyReference[],
-  Value,
-> {
-  readonly deps: Dependencies;
-  readonly factory: (dependencies: DependencyContext<Dependencies>) => Value;
-}
 
 type DefinitionValue<T> =
   T extends DependencyDefinition<
@@ -86,6 +94,74 @@ export type Container<Entries extends Record<string, DependencyEntry>> = {
   >;
 };
 
+interface DependencyFactoryOptions<
+  Scope extends DependencyScope,
+  Dependencies extends readonly AnyDependencyReference[],
+  Value,
+> {
+  readonly deps: Dependencies & ValidateDependencyScopes<Scope, Dependencies>;
+  readonly factory: (dependencies: DependencyContext<Dependencies>) => Value;
+}
+
+type CanDependOn<
+  Parent extends DependencyScope,
+  Child extends DependencyScope,
+> = Parent extends "singleton"
+  ? Child extends "singleton" | "value"
+    ? true
+    : false
+  : Parent extends "request"
+    ? Child extends "singleton" | "request" | "transient" | "value"
+      ? true
+      : false
+    : Parent extends "transient"
+      ? true
+      : Child extends "value"
+        ? true
+        : false;
+
+export interface InvalidDependencyScope<
+  Parent extends DependencyScope,
+  Child extends DependencyScope,
+> {
+  readonly __nooh_dependency_error__: `A ${Parent} dependency cannot depend on a ${Child} dependency.`;
+}
+
+type ValidateDependencyScopesImpl<
+  Parent extends DependencyScope,
+  Dependencies extends readonly AnyDependencyReference[],
+> = Dependencies extends readonly [infer Head, ...infer Tail]
+  ? Head extends AnyDependencyReference
+    ? Head extends DependencyReference<
+        string,
+        unknown,
+        infer ChildScope,
+        readonly AnyDependencyReference[]
+      >
+      ? CanDependOn<Parent, ChildScope> extends true
+        ? readonly [
+            Head,
+            ...ValidateDependencyScopesImpl<
+              Parent,
+              Tail extends readonly AnyDependencyReference[] ? Tail : []
+            >,
+          ]
+        : readonly [
+            Head & InvalidDependencyScope<Parent, ChildScope>,
+            ...ValidateDependencyScopesImpl<
+              Parent,
+              Tail extends readonly AnyDependencyReference[] ? Tail : []
+            >,
+          ]
+      : Dependencies
+    : Dependencies
+  : Dependencies;
+
+export type ValidateDependencyScopes<
+  Parent extends DependencyScope,
+  Dependencies extends readonly AnyDependencyReference[],
+> = ValidateDependencyScopesImpl<Parent, Dependencies>;
+
 const createDefinition = <
   Value,
   Scope extends DependencyScope,
@@ -109,14 +185,16 @@ export function singleton<
   const Dependencies extends readonly AnyDependencyReference[],
   Value,
 >(
-  options: DependencyFactoryOptions<Dependencies, Value>
+  options: DependencyFactoryOptions<"singleton", Dependencies, Value>
 ): DependencyDefinition<Value, "singleton", Dependencies>;
 
 export function singleton<
   const Dependencies extends readonly AnyDependencyReference[],
   Value,
 >(
-  input: (() => Value) | DependencyFactoryOptions<Dependencies, Value>
+  input:
+    | (() => Value)
+    | DependencyFactoryOptions<"singleton", Dependencies, Value>
 ): DependencyDefinition<Value, "singleton", Dependencies> {
   if (typeof input === "function") {
     return createDefinition("singleton", [], () =>
@@ -135,14 +213,16 @@ export function request<
   const Dependencies extends readonly AnyDependencyReference[],
   Value,
 >(
-  options: DependencyFactoryOptions<Dependencies, Value>
+  options: DependencyFactoryOptions<"request", Dependencies, Value>
 ): DependencyDefinition<Value, "request", Dependencies>;
 
 export function request<
   const Dependencies extends readonly AnyDependencyReference[],
   Value,
 >(
-  input: (() => Value) | DependencyFactoryOptions<Dependencies, Value>
+  input:
+    | (() => Value)
+    | DependencyFactoryOptions<"request", Dependencies, Value>
 ): DependencyDefinition<Value, "request", Dependencies> {
   if (typeof input === "function") {
     return createDefinition("request", [], () =>
@@ -161,14 +241,16 @@ export function transient<
   const Dependencies extends readonly AnyDependencyReference[],
   Value,
 >(
-  options: DependencyFactoryOptions<Dependencies, Value>
+  options: DependencyFactoryOptions<"transient", Dependencies, Value>
 ): DependencyDefinition<Value, "transient", Dependencies>;
 
 export function transient<
   const Dependencies extends readonly AnyDependencyReference[],
   Value,
 >(
-  input: (() => Value) | DependencyFactoryOptions<Dependencies, Value>
+  input:
+    | (() => Value)
+    | DependencyFactoryOptions<"transient", Dependencies, Value>
 ): DependencyDefinition<Value, "transient", Dependencies> {
   if (typeof input === "function") {
     return createDefinition("transient", [], () =>
@@ -199,6 +281,40 @@ const resolveDependencies = <
   return resolved as DependencyContext<Dependencies>;
 };
 
+const resolveReference = <
+  Name extends string,
+  Value,
+  Scope extends DependencyScope,
+  const Dependencies extends readonly AnyDependencyReference[],
+>(
+  reference: DependencyReference<Name, Value, Scope, Dependencies>,
+  definition: DependencyDefinition<Value, Scope, Dependencies>,
+  context: DependencyResolutionContext
+): Value => {
+  if (context.resolving.has(reference)) {
+    const start = context.stack.indexOf(reference.name);
+
+    const cycle =
+      start === -1
+        ? [...context.stack, reference.name]
+        : [...context.stack.slice(start), reference.name];
+
+    throw new DependencyCycleError(cycle);
+  }
+
+  context.resolving.add(reference);
+  context.stack.push(reference.name);
+
+  try {
+    return definition.factory(
+      resolveDependencies(definition.dependencies, context)
+    );
+  } finally {
+    context.stack.pop();
+    context.resolving.delete(reference);
+  }
+};
+
 const createReference = <
   Name extends string,
   Value,
@@ -223,9 +339,7 @@ const createReference = <
     resolve: (context: DependencyResolutionContext): Value => {
       if (definition.scope === "singleton") {
         if (!singletonInitialized) {
-          singletonValue = definition.factory(
-            resolveDependencies(definition.dependencies, context)
-          );
+          singletonValue = resolveReference(reference, definition, context);
 
           singletonInitialized = true;
         }
@@ -238,18 +352,14 @@ const createReference = <
           return context.cache.get(reference) as Value;
         }
 
-        const resolved = definition.factory(
-          resolveDependencies(definition.dependencies, context)
-        );
+        const resolved = resolveReference(reference, definition, context);
 
         context.cache.set(reference, resolved);
 
         return resolved;
       }
 
-      return definition.factory(
-        resolveDependencies(definition.dependencies, context)
-      );
+      return resolveReference(reference, definition, context);
     },
 
     scope: definition.scope,
