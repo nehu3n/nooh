@@ -3,7 +3,17 @@
 export { compile } from "@/compile";
 export { createCompiler } from "@/compiler";
 export { diff } from "@/diff";
-export { generate } from "@/generate";
+export {
+  generate,
+  generateRouteIntrospection,
+} from "@/generate";
+export type { RouteMetadata } from "@/introspect";
+export {
+  introspectRoute,
+  introspectRoutes,
+  NOOH_ROUTE_METADATA,
+  readRouteMetadata,
+} from "@/introspect";
 export { analyze } from "@/pipeline/analyze";
 export { loadConfig } from "@/pipeline/config";
 export {

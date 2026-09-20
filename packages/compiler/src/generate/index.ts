@@ -12,6 +12,9 @@ import type {
   ProjectModel,
 } from "@/types";
 
+const getRouterPaths = (model: ProjectModel): readonly string[] =>
+  [...new Set(model.routes.map((route) => route.routerPath))].sort();
+
 export const generate = (
   plan: CompilationPlan,
   model: ProjectModel
@@ -24,11 +27,7 @@ export const generate = (
 
   modules.push(generateMiddlewareModule(plan));
 
-  const routerPaths = [
-    ...new Set(model.routes.map((route) => route.routerPath)),
-  ].sort();
-
-  for (const routerPath of routerPaths) {
+  for (const routerPath of getRouterPaths(model)) {
     modules.push(generateRouterModule(plan, model, routerPath));
   }
 
@@ -37,6 +36,25 @@ export const generate = (
   }
 
   modules.push(generateAppModule(plan, model));
+
+  modules.sort((a, b) => a.id.localeCompare(b.id));
+
+  return {
+    modules,
+  };
+};
+
+export const generateRouteIntrospection = (
+  plan: CompilationPlan,
+  model: ProjectModel
+): GeneratedOutput => {
+  const modules: GeneratedModule[] = [];
+
+  for (const routerPath of getRouterPaths(model)) {
+    modules.push(
+      generateRouterModule(plan, model, routerPath, "introspection")
+    );
+  }
 
   modules.sort((a, b) => a.id.localeCompare(b.id));
 
