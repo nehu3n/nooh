@@ -65,7 +65,6 @@ export interface DiscoveredGroup {
 
 export interface DiscoveredProject {
   readonly config: LoadedConfig;
-  readonly dependencies: readonly SourceFile[];
   readonly endpoints: readonly DiscoveredEndpoint[];
   readonly groups: readonly DiscoveredGroup[];
 }
@@ -118,28 +117,7 @@ export interface RouteModel {
   readonly source: string;
 }
 
-export interface RouteGroup {
-  readonly children: readonly string[];
-  readonly configSource?: string;
-  readonly id: string;
-  readonly parentId?: string;
-  readonly path: string;
-  readonly routes: readonly string[];
-}
-
 export type DependencyScope = "value" | "singleton" | "request" | "transient";
-
-export const DEPENDENCY_SCOPES: readonly [
-  "value",
-  "singleton",
-  "request",
-  "transient",
-] = [
-  "value",
-  "singleton",
-  "request",
-  "transient",
-] as const satisfies readonly DependencyScope[];
 
 export interface DependencyDeclaration {
   readonly dependencies: readonly string[];
@@ -158,10 +136,41 @@ export interface DependencyGraph {
   readonly order: readonly string[];
 }
 
+export interface RouteDependencyModel {
+  readonly closure: readonly string[];
+  readonly roots: readonly string[];
+  readonly routeId: string;
+}
+
+export interface CompilationIntrospection {
+  readonly dependencies: DependencyGraph;
+  readonly routeDependencies: readonly RouteDependencyModel[];
+}
+
+export interface IntrospectionInput {
+  readonly compilation: Compilation;
+  readonly loader: ModuleLoader;
+}
+
+export interface IntrospectionResult {
+  readonly diagnostics: readonly Diagnostic[];
+  readonly introspection: CompilationIntrospection | null;
+}
+
+export interface RouteGroup {
+  readonly children: readonly string[];
+  readonly configSource?: string;
+  readonly id: string;
+  readonly parentId?: string;
+  readonly path: string;
+  readonly routes: readonly string[];
+}
+
 export interface ProjectModel {
   readonly config: LoadedConfig;
   readonly dependencies: DependencyGraph;
   readonly groups: readonly RouteGroup[];
+  readonly routeDependencies: readonly RouteDependencyModel[];
   readonly routes: readonly RouteModel[];
 }
 
@@ -193,6 +202,7 @@ export interface CompilationPlan {
   readonly dependencies: DependencyGraph;
   readonly modules: readonly ModulePlan[];
   readonly outputRoot: string;
+  readonly routeDependencies: readonly RouteDependencyModel[];
 }
 
 export interface GeneratedModule {
@@ -227,6 +237,10 @@ export interface NoohCompiler {
     config: LoadedConfig
   ) => DiscoveredProject;
   generate: (plan: CompilationPlan, model: ProjectModel) => GeneratedOutput;
+  generateRouteIntrospection: (
+    plan: CompilationPlan,
+    model: ProjectModel
+  ) => GeneratedOutput;
   loadConfig: (input: CompileInput) => Promise<ConfigLoadResult>;
   parse: (project: DiscoveredProject) => ParsedProject;
   plan: (model: ProjectModel, outputRoot?: string) => CompilationPlan;

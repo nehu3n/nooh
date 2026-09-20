@@ -1,18 +1,30 @@
-import { generate } from "@/generate";
+import { generate, generateRouteIntrospection } from "@/generate";
+
+import { introspectCompilation } from "@/introspect";
 
 import { analyze } from "@/pipeline/analyze";
 import { loadConfig } from "@/pipeline/config";
-import { loadDependencyGraph } from "@/pipeline/dependencies";
 import { discover } from "@/pipeline/discover";
 import { parse } from "@/pipeline/parse";
 import { plan } from "@/pipeline/plan";
 
-import type { NoohCompiler } from "@/types";
+import type {
+  Compilation,
+  CompileInput,
+  IntrospectionInput,
+  IntrospectionResult,
+  NoohCompiler,
+} from "@/types";
+
+const emptyDependencies = {
+  nodes: new Map(),
+  order: [],
+};
 
 export const createCompiler = (): NoohCompiler => ({
   analyze,
 
-  compile: async (input) => {
+  compile: async (input: CompileInput): Promise<Compilation> => {
     const configResult = await loadConfig(input);
 
     if (!configResult.config) {
@@ -26,12 +38,10 @@ export const createCompiler = (): NoohCompiler => ({
             value: {},
           },
 
-          dependencies: {
-            nodes: new Map(),
-            order: [],
-          },
+          dependencies: emptyDependencies,
 
           groups: [],
+          routeDependencies: [],
           routes: [],
         },
         output: null,
@@ -42,22 +52,9 @@ export const createCompiler = (): NoohCompiler => ({
     const discovered = discover(input.sources, configResult.config);
     const parsed = parse(discovered);
 
-    const dependencyResult = await loadDependencyGraph(
-      discovered.dependencies,
-      input.loader
-    );
+    const analyzed = analyze(parsed, configResult.config, emptyDependencies);
 
-    const analyzed = analyze(
-      parsed,
-      configResult.config,
-      dependencyResult.graph
-    );
-
-    const diagnostics = [
-      ...configResult.diagnostics,
-      ...dependencyResult.diagnostics,
-      ...analyzed.diagnostics,
-    ];
+    const diagnostics = [...configResult.diagnostics, ...analyzed.diagnostics];
 
     const hasErrors = diagnostics.some(
       (diagnostic) => diagnostic.severity === "error"
@@ -86,7 +83,12 @@ export const createCompiler = (): NoohCompiler => ({
 
   discover,
   generate,
+  generateRouteIntrospection,
   loadConfig,
   parse,
   plan,
 });
+
+export const introspect = (
+  input: IntrospectionInput
+): Promise<IntrospectionResult> => introspectCompilation(input);

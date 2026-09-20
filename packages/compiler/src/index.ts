@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/performance/noBarrelFile: ... */
 
 export { compile } from "@/compile";
-export { createCompiler } from "@/compiler";
+export { createCompiler, introspect } from "@/compiler";
 export { diff } from "@/diff";
 export {
   generate,
@@ -9,8 +9,8 @@ export {
 } from "@/generate";
 export type { RouteMetadata } from "@/introspect";
 export {
+  introspectCompilation,
   introspectRoute,
-  introspectRoutes,
   NOOH_ROUTE_METADATA,
   readRouteMetadata,
 } from "@/introspect";
@@ -28,6 +28,7 @@ export { recompile } from "@/recompile";
 
 export type {
   Compilation,
+  CompilationIntrospection,
   CompilationPlan,
   CompileInput,
   CompileOptions,
@@ -41,6 +42,8 @@ export type {
   DiscoveredProject,
   GeneratedModule,
   GeneratedOutput,
+  IntrospectionInput,
+  IntrospectionResult,
   LoadedConfig,
   ModuleKind,
   ModuleLoader,
@@ -51,6 +54,7 @@ export type {
   ParsedRoute,
   ProjectModel,
   RecompileInput,
+  RouteDependencyModel,
   RouteGroup,
   RouteMethod,
   RouteModel,

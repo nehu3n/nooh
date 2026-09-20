@@ -1,4 +1,10 @@
-import type { Diagnostic, ModuleLoader, RouteModel } from "@/types";
+import type {
+  Compilation,
+  Diagnostic,
+  IntrospectionInput,
+  IntrospectionResult,
+  RouteModel,
+} from "@/types";
 
 export const NOOH_ROUTE_METADATA: unique symbol = Symbol.for("nooh.route");
 
@@ -30,7 +36,7 @@ export const readRouteMetadata = (value: unknown): RouteMetadata | null => {
 
 export const introspectRoute = async (
   route: RouteModel,
-  loader: ModuleLoader
+  loader: IntrospectionInput["loader"]
 ): Promise<{
   readonly diagnostics: readonly Diagnostic[];
   readonly metadata?: RouteMetadata;
@@ -47,7 +53,7 @@ export const introspectRoute = async (
           file: route.source,
           message:
             error instanceof Error
-              ? ["Failed to introspect route:", error.message].join(" ")
+              ? `Failed to introspect route: ${error.message}`
               : "Failed to introspect route.",
           severity: "error",
         },
@@ -65,8 +71,10 @@ export const introspectRoute = async (
           file: route.source,
           message: [
             "The route did not expose Nooh route metadata.",
-            "The route must be loaded through a Nooh introspection router.",
-          ].join(" "),
+            "",
+            "Make sure the route was evaluated against the generated",
+            "Nooh introspection router.",
+          ].join("\n"),
           severity: "error",
         },
       ],
@@ -79,30 +87,63 @@ export const introspectRoute = async (
   };
 };
 
-export const introspectRoutes = async (
-  routes: readonly RouteModel[],
-  loader: ModuleLoader
-): Promise<{
-  readonly diagnostics: readonly Diagnostic[];
-  readonly routes: ReadonlyMap<string, RouteMetadata>;
-}> => {
+const getRoutes = (compilation: Compilation): readonly RouteModel[] =>
+  compilation.model.routes;
+
+export const introspectCompilation = async (
+  input: IntrospectionInput
+): Promise<IntrospectionResult> => {
+  if (!input.compilation.plan) {
+    return {
+      diagnostics: [
+        {
+          code: "NOOH033",
+          message:
+            "Cannot introspect a compilation without a compilation plan.",
+          severity: "error",
+        },
+      ],
+      introspection: null,
+    };
+  }
+
   const diagnostics: Diagnostic[] = [];
 
-  const metadata = new Map<string, RouteMetadata>();
+  const routeMetadata = new Map<string, RouteMetadata>();
 
-  for (const route of routes) {
+  for (const route of getRoutes(input.compilation)) {
     // biome-ignore lint/performance/noAwaitInLoops: ...
-    const result = await introspectRoute(route, loader);
+    const result = await introspectRoute(route, input.loader);
 
     diagnostics.push(...result.diagnostics);
 
     if (result.metadata) {
-      metadata.set(route.id, result.metadata);
+      routeMetadata.set(route.id, result.metadata);
     }
+  }
+
+  if (diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
+    return {
+      diagnostics,
+      introspection: null,
+    };
   }
 
   return {
     diagnostics,
-    routes: metadata,
+    introspection: {
+      dependencies: {
+        nodes: input.compilation.model.dependencies.nodes,
+        order: input.compilation.model.dependencies.order,
+      },
+
+      routeDependencies: [...routeMetadata.entries()]
+        .map(([routeId]) => ({
+          closure: [],
+          roots: [],
+          routeId,
+        }))
+        .sort((a, b) => a.routeId.localeCompare(b.routeId)),
+    },
   };
 };
