@@ -22,6 +22,7 @@ export interface SourceSnapshot {
 
 export interface ModuleLoader {
   loadDefault: (modulePath: string) => Promise<unknown>;
+  loadModule?: (modulePath: string) => Promise<Record<string, unknown>>;
 }
 
 export interface CompileOptions {
@@ -37,10 +38,12 @@ export interface CompileInput {
 }
 
 export interface RuntimeConfig {
+  readonly dependencies?: string | undefined;
   readonly routes?: string | undefined;
 }
 
 export interface LoadedConfig {
+  readonly dependenciesRoot: string;
   readonly root: string;
   readonly routesRoot: string;
   readonly source: string;
@@ -65,6 +68,7 @@ export interface DiscoveredGroup {
 
 export interface DiscoveredProject {
   readonly config: LoadedConfig;
+  readonly dependencies: readonly SourceFile[];
   readonly endpoints: readonly DiscoveredEndpoint[];
   readonly groups: readonly DiscoveredGroup[];
 }
@@ -134,6 +138,7 @@ export interface DependencyNode {
 export interface DependencyGraph {
   readonly nodes: ReadonlyMap<string, DependencyNode>;
   readonly order: readonly string[];
+  readonly references: ReadonlyMap<object, string>;
 }
 
 export interface RouteDependencyModel {
@@ -149,6 +154,7 @@ export interface CompilationIntrospection {
 
 export interface IntrospectionInput {
   readonly compilation: Compilation;
+  readonly dependencySources: readonly SourceFile[];
   readonly loader: ModuleLoader;
 }
 

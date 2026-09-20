@@ -1,6 +1,7 @@
 import type { CompileInput, ConfigLoadResult, RuntimeConfig } from "@/types";
 import { normalizePath, toProjectPath } from "@/utils/path";
 
+const DEFAULT_DEPENDENCIES_ROOT = "src/deps";
 const DEFAULT_ROUTES_ROOT = "src/routes";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -59,17 +60,36 @@ export const loadConfig = async (
     };
   }
 
+  const dependenciesValue = defaultExport.dependencies;
+
+  if (dependenciesValue !== undefined && !isString(dependenciesValue)) {
+    return {
+      diagnostics: [
+        {
+          code: "NOOH013",
+          file: input.config,
+          message: 'The Nooh config "dependencies" option must be a string.',
+          severity: "error",
+        },
+      ],
+    };
+  }
+
   const root = normalizePath(input.root ?? "");
   const source = toProjectPath(input.config, root);
   const routes = routesValue ?? DEFAULT_ROUTES_ROOT;
+  const dependencies = dependenciesValue ?? DEFAULT_DEPENDENCIES_ROOT;
   const routesRoot = toProjectPath(routes, root);
+  const dependenciesRoot = toProjectPath(dependencies, root);
 
   const value: RuntimeConfig = {
+    dependencies: dependenciesValue,
     routes: routesValue,
   };
 
   return {
     config: {
+      dependenciesRoot,
       root,
       routesRoot,
       source,

@@ -18,13 +18,16 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   let routeWatcher: FSWatcher | undefined;
+  let dependencyWatcher: FSWatcher | undefined;
   let configWatcher: FSWatcher | undefined;
 
   const closeWatchers = (): void => {
     routeWatcher?.close();
+    dependencyWatcher?.close();
     configWatcher?.close();
 
     routeWatcher = undefined;
+    dependencyWatcher = undefined;
     configWatcher = undefined;
   };
 
@@ -43,6 +46,20 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
       }
     );
 
+    try {
+      dependencyWatcher = watchFs(
+        project.dependenciesRoot,
+        {
+          recursive: true,
+        },
+        (_event, filename) => {
+          schedule(filename ?? undefined);
+        }
+      );
+    } catch {
+      dependencyWatcher = undefined;
+    }
+
     configWatcher = watchFs(project.config, (_event, filename) => {
       schedule(filename ? filename.toString() : project.config);
     });
@@ -58,7 +75,9 @@ export const watch = async (options: WatchOptions = {}): Promise<void> => {
 
     try {
       const buildOptions = options.config
-        ? { config: options.config }
+        ? {
+            config: options.config,
+          }
         : undefined;
 
       const result = await runBuild(buildOptions);

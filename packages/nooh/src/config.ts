@@ -1,4 +1,5 @@
 export interface NoohConfigOptions {
+  readonly dependencies?: string;
   readonly routes?: string;
 }
 

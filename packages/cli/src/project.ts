@@ -5,6 +5,7 @@ import { loadConfig, type SourceSnapshot } from "@nooh-ts/compiler";
 
 export interface Project {
   readonly config: string;
+  readonly dependenciesRoot: string;
   readonly files: readonly string[];
   readonly root: string;
   readonly routesRoot: string;
@@ -116,6 +117,7 @@ export const discoverProject = async (
   const loadedConfig = await loadProjectConfig(root, config);
 
   const routesRoot = resolve(root, loadedConfig.routesRoot);
+  const dependenciesRoot = resolve(root, loadedConfig.dependenciesRoot);
 
   const routesStat = await stat(routesRoot).catch(() => null);
 
@@ -125,11 +127,18 @@ export const discoverProject = async (
     );
   }
 
-  const files = await walk(routesRoot);
+  const dependenciesStat = await stat(dependenciesRoot).catch(() => null);
+
+  const routeFiles = await walk(routesRoot);
+
+  const dependencyFiles = dependenciesStat?.isDirectory()
+    ? await walk(dependenciesRoot)
+    : [];
 
   return {
     config,
-    files,
+    dependenciesRoot,
+    files: [...new Set([...routeFiles, ...dependencyFiles])],
     root,
     routesRoot,
   };

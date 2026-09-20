@@ -15,8 +15,6 @@ import {
   toProjectPath,
 } from "@/utils/path";
 
-const DEFAULT_DEPENDENCIES_ROOT = "src/deps";
-
 const ROUTE_FILE_PATTERN =
   /\.(get|post|put|patch|delete|options|head|all)\.(?:ts|tsx)$/;
 
@@ -32,16 +30,13 @@ const isGroupFile = (filePath: string): boolean => {
   return filename === "$.ts" || filename === "$.tsx";
 };
 
-const isDependencyFile = (filePath: string): boolean =>
-  isPathInside(filePath, DEFAULT_DEPENDENCIES_ROOT);
-
 const discoverDependency = (
   config: LoadedConfig,
   file: SourceFile
 ): SourceFile | null => {
   const source = toProjectPath(file.path, config.root);
 
-  if (!isDependencyFile(source)) {
+  if (!isPathInside(source, config.dependenciesRoot)) {
     return null;
   }
 

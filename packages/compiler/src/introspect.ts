@@ -1,5 +1,10 @@
+import {
+  dependencyClosure,
+  loadDependencyGraph,
+} from "@/pipeline/dependencies";
+
 import type {
-  Compilation,
+  CompilationIntrospection,
   Diagnostic,
   IntrospectionInput,
   IntrospectionResult,
@@ -72,8 +77,8 @@ export const introspectRoute = async (
           message: [
             "The route did not expose Nooh route metadata.",
             "",
-            "Make sure the route was evaluated against the generated",
-            "Nooh introspection router.",
+            "Make sure the route is evaluated against the generated",
+            "Nooh router helpers.",
           ].join("\n"),
           severity: "error",
         },
@@ -87,8 +92,21 @@ export const introspectRoute = async (
   };
 };
 
-const getRoutes = (compilation: Compilation): readonly RouteModel[] =>
-  compilation.model.routes;
+const unknownDependencyDiagnostic = (
+  route: RouteModel,
+  dependency: unknown
+): Diagnostic => ({
+  code: "NOOH034",
+  file: route.source,
+  message:
+    isRecord(dependency) && typeof dependency.name === "string"
+      ? [
+          `Route "${route.id}" references unknown dependency`,
+          `"${dependency.name}".`,
+        ].join(" ")
+      : `Route "${route.id}" contains an invalid dependency reference.`,
+  severity: "error",
+});
 
 export const introspectCompilation = async (
   input: IntrospectionInput
@@ -109,17 +127,58 @@ export const introspectCompilation = async (
 
   const diagnostics: Diagnostic[] = [];
 
-  const routeMetadata = new Map<string, RouteMetadata>();
+  const dependencyResult = await loadDependencyGraph(
+    input.dependencySources,
+    input.loader
+  );
 
-  for (const route of getRoutes(input.compilation)) {
+  diagnostics.push(...dependencyResult.diagnostics);
+
+  const routeDependencies = new Map<
+    string,
+    {
+      readonly roots: readonly string[];
+      readonly closure: readonly string[];
+    }
+  >();
+
+  for (const route of input.compilation.model.routes) {
     // biome-ignore lint/performance/noAwaitInLoops: ...
     const result = await introspectRoute(route, input.loader);
 
     diagnostics.push(...result.diagnostics);
 
-    if (result.metadata) {
-      routeMetadata.set(route.id, result.metadata);
+    if (!result.metadata) {
+      continue;
     }
+
+    const roots: string[] = [];
+
+    for (const dependency of result.metadata.dependencies) {
+      if (typeof dependency !== "object" || dependency === null) {
+        diagnostics.push(unknownDependencyDiagnostic(route, dependency));
+
+        continue;
+      }
+
+      const id = dependencyResult.graph.references.get(dependency);
+
+      if (!id) {
+        diagnostics.push(unknownDependencyDiagnostic(route, dependency));
+        continue;
+      }
+
+      if (!roots.includes(id)) {
+        roots.push(id);
+      }
+    }
+
+    const closure = dependencyClosure(dependencyResult.graph, roots);
+
+    routeDependencies.set(route.id, {
+      closure,
+      roots: [...roots].sort(),
+    });
   }
 
   if (diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
@@ -129,21 +188,20 @@ export const introspectCompilation = async (
     };
   }
 
+  const result: CompilationIntrospection = {
+    dependencies: dependencyResult.graph,
+
+    routeDependencies: [...routeDependencies.entries()]
+      .map(([routeId, value]) => ({
+        closure: value.closure,
+        roots: value.roots,
+        routeId,
+      }))
+      .sort((a, b) => a.routeId.localeCompare(b.routeId)),
+  };
+
   return {
     diagnostics,
-    introspection: {
-      dependencies: {
-        nodes: input.compilation.model.dependencies.nodes,
-        order: input.compilation.model.dependencies.order,
-      },
-
-      routeDependencies: [...routeMetadata.entries()]
-        .map(([routeId]) => ({
-          closure: [],
-          roots: [],
-          routeId,
-        }))
-        .sort((a, b) => a.routeId.localeCompare(b.routeId)),
-    },
+    introspection: result,
   };
 };

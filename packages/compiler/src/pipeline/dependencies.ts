@@ -4,6 +4,7 @@ import type {
   DependencyNode,
   DependencyScope,
   Diagnostic,
+  ModuleLoader,
   SourceFile,
 } from "@/types";
 
@@ -29,38 +30,72 @@ const isDependencyReference = (
     value.scope === "request" ||
     value.scope === "transient");
 
+const isDependencyContainer = (
+  value: unknown
+): value is Record<string, unknown> => {
+  if (!isRecord(value) || Array.isArray(value)) {
+    return false;
+  }
+
+  if (!Object.isFrozen(value)) {
+    return false;
+  }
+
+  const entries = Object.entries(value);
+
+  return (
+    entries.length > 0 &&
+    entries.every(([, entry]) => isDependencyReference(entry))
+  );
+};
+
 const emptyGraph = (): DependencyGraph => ({
-  nodes: new Map<string, DependencyNode>(),
+  nodes: new Map(),
   order: [],
+  references: new Map(),
 });
 
-const scopeRank: Record<DependencyScope, number> = {
-  request: 1,
-  singleton: 0,
-  transient: 2,
-  value: 0,
+const canDependOn = (
+  parent: DependencyScope,
+  child: DependencyScope
+): boolean => {
+  if (parent === "singleton") {
+    return child === "singleton" || child === "value";
+  }
+
+  if (parent === "request") {
+    return (
+      child === "singleton" ||
+      child === "request" ||
+      child === "transient" ||
+      child === "value"
+    );
+  }
+
+  if (parent === "transient") {
+    return true;
+  }
+
+  return child === "value";
 };
 
 const createScopeDiagnostic = (
   declaration: DependencyDeclaration,
   dependency: DependencyDeclaration
 ): Diagnostic | null => {
-  if (
-    declaration.scope === "singleton" &&
-    scopeRank[dependency.scope] > scopeRank[declaration.scope]
-  ) {
-    return {
-      code: "NOOH020",
-      file: declaration.source,
-      message: [
-        `Singleton dependency "${declaration.name}" cannot depend on`,
-        `${dependency.scope}-scoped dependency "${dependency.name}".`,
-      ].join(" "),
-      severity: "error",
-    };
+  if (canDependOn(declaration.scope, dependency.scope)) {
+    return null;
   }
 
-  return null;
+  return {
+    code: "NOOH020",
+    file: declaration.source,
+    message: [
+      `Dependency "${declaration.name}" with scope "${declaration.scope}"`,
+      `cannot depend on "${dependency.name}" with scope "${dependency.scope}".`,
+    ].join(" "),
+    severity: "error",
+  };
 };
 
 const createMissingDependencyDiagnostic = (
@@ -161,7 +196,8 @@ const topologicalOrder = (
 };
 
 export const createDependencyGraph = (
-  declarations: readonly DependencyDeclaration[]
+  declarations: readonly DependencyDeclaration[],
+  references: ReadonlyMap<object, string> = new Map()
 ): {
   readonly diagnostics: readonly Diagnostic[];
   readonly graph: DependencyGraph;
@@ -169,7 +205,10 @@ export const createDependencyGraph = (
   if (declarations.length === 0) {
     return {
       diagnostics: [],
-      graph: emptyGraph(),
+      graph: {
+        ...emptyGraph(),
+        references,
+      },
     };
   }
 
@@ -219,7 +258,7 @@ export const createDependencyGraph = (
 
   const order = topologicalOrder(nodes, diagnostics);
 
-  const uniqueDiagnostics = new Map<string, Diagnostic>();
+  const unique = new Map<string, Diagnostic>();
 
   for (const diagnostic of diagnostics) {
     const key = [
@@ -228,27 +267,115 @@ export const createDependencyGraph = (
       diagnostic.message,
     ].join("\0");
 
-    uniqueDiagnostics.set(key, diagnostic);
+    unique.set(key, diagnostic);
   }
 
   return {
-    diagnostics: [...uniqueDiagnostics.values()],
+    diagnostics: [...unique.values()],
     graph: {
       nodes,
       order,
+      references,
     },
+  };
+};
+
+const loadModule = async (
+  loader: ModuleLoader,
+  path: string
+): Promise<Record<string, unknown>> => {
+  if (loader.loadModule) {
+    return loader.loadModule(path);
+  }
+
+  const value = await loader.loadDefault(path);
+
+  return {
+    default: value,
+  };
+};
+
+interface LoadedReference {
+  readonly id: string;
+  readonly name: string;
+  readonly reference: DependencyReferenceLike;
+  readonly scope: DependencyScope;
+  readonly source: string;
+}
+
+const collectReferences = (
+  source: string,
+  module: Record<string, unknown>
+): {
+  readonly diagnostics: readonly Diagnostic[];
+  readonly references: readonly LoadedReference[];
+} => {
+  const diagnostics: Diagnostic[] = [];
+  const references: LoadedReference[] = [];
+
+  const seenObjects = new Set<object>();
+
+  const addReference = (id: string, value: DependencyReferenceLike): void => {
+    if (seenObjects.has(value)) {
+      diagnostics.push({
+        code: "NOOH027",
+        file: source,
+        message: [
+          `Dependency reference "${value.name}"`,
+          "is exported more than once.",
+          `Duplicate provider: "${id}".`,
+        ].join(" "),
+        severity: "error",
+      });
+
+      return;
+    }
+
+    seenObjects.add(value);
+
+    references.push({
+      id,
+      name: value.name,
+      reference: value,
+      scope: value.scope,
+      source,
+    });
+  };
+
+  for (const [exportName, exported] of Object.entries(module)) {
+    if (exportName === "__esModule") {
+      continue;
+    }
+
+    if (isDependencyReference(exported)) {
+      addReference(`${source}#${exportName}`, exported);
+
+      continue;
+    }
+
+    if (isDependencyContainer(exported)) {
+      for (const [name, reference] of Object.entries(exported)) {
+        if (!isDependencyReference(reference)) {
+          continue;
+        }
+
+        addReference(`${source}#${exportName}.${name}`, reference);
+      }
+    }
+  }
+
+  return {
+    diagnostics,
+    references,
   };
 };
 
 export const loadDependencyGraph = async (
   sources: readonly SourceFile[],
-  loader: {
-    readonly loadDefault: (modulePath: string) => Promise<unknown>;
-  }
+  loader: ModuleLoader
 ): Promise<{
   readonly diagnostics: readonly Diagnostic[];
   readonly graph: DependencyGraph;
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: ...
 }> => {
   if (sources.length === 0) {
     return {
@@ -257,137 +384,95 @@ export const loadDependencyGraph = async (
     };
   }
 
-  const loaded: Array<{
-    readonly source: SourceFile;
-    readonly container: Record<string, unknown>;
-  }> = [];
-
   const diagnostics: Diagnostic[] = [];
+  const loaded: LoadedReference[] = [];
 
   for (const source of sources) {
-    let exported: unknown;
+    let module: Record<string, unknown> | undefined;
 
     try {
       // biome-ignore lint/performance/noAwaitInLoops: ...
-      exported = await loader.loadDefault(source.path);
+      module = await loadModule(loader, source.path);
     } catch (error) {
       diagnostics.push({
         code: "NOOH024",
         file: source.path,
         message:
           error instanceof Error
-            ? ["Failed to load dependency container:", error.message].join(" ")
-            : "Failed to load dependency container.",
+            ? ["Failed to load dependency module:", error.message].join(" ")
+            : "Failed to load dependency module.",
         severity: "error",
       });
 
       continue;
     }
 
-    if (!isRecord(exported) || Array.isArray(exported)) {
-      diagnostics.push({
-        code: "NOOH025",
-        file: source.path,
-        message: "A dependency module must default-export a container.",
-        severity: "error",
-      });
+    const result = collectReferences(source.path, module);
 
-      continue;
-    }
+    diagnostics.push(...result.diagnostics);
 
-    const entries = Object.entries(exported);
-
-    const invalidEntry = entries.find(
-      ([, value]) => !isDependencyReference(value)
-    );
-
-    if (invalidEntry) {
-      diagnostics.push({
-        code: "NOOH025",
-        file: source.path,
-        message: [
-          "A dependency container may only expose",
-          "dependency references.",
-          `Invalid export "${invalidEntry[0]}".`,
-        ].join(" "),
-        severity: "error",
-      });
-
-      continue;
-    }
-
-    loaded.push({
-      container: exported as Record<string, unknown>,
-      source,
-    });
+    loaded.push(...result.references);
   }
 
-  const ids = new Map<DependencyReferenceLike, string>();
+  const references = new Map<object, string>();
 
   for (const entry of loaded) {
-    for (const [key, value] of Object.entries(entry.container)) {
-      if (!isDependencyReference(value)) {
-        continue;
-      }
-
-      const id = `${entry.source.path}#${key}`;
-
-      ids.set(value, id);
-    }
+    references.set(entry.reference, entry.id);
   }
 
   const declarations: DependencyDeclaration[] = [];
 
   for (const entry of loaded) {
-    for (const [key, value] of Object.entries(entry.container)) {
-      if (!isDependencyReference(value)) {
+    const dependencies: string[] = [];
+
+    for (const dependency of entry.reference.dependencies) {
+      if (!isDependencyReference(dependency)) {
+        diagnostics.push({
+          code: "NOOH026",
+          file: entry.source,
+          message: [
+            `Dependency "${entry.name}" contains`,
+            "an invalid dependency reference.",
+          ].join(" "),
+          severity: "error",
+        });
+
         continue;
       }
 
-      const id = `${entry.source.path}#${key}`;
-      const dependencies: string[] = [];
+      const dependencyId = references.get(dependency);
 
-      for (const dependency of value.dependencies) {
-        if (!isDependencyReference(dependency)) {
-          diagnostics.push({
-            code: "NOOH026",
-            file: entry.source.path,
-            message: [
-              `Dependency "${value.name}" contains`,
-              "an invalid dependency reference.",
-            ].join(" "),
-            severity: "error",
-          });
+      if (!dependencyId) {
+        diagnostics.push({
+          code: "NOOH021",
+          file: entry.source,
+          message: [
+            `Dependency "${entry.name}" references`,
+            `an unknown dependency "${dependency.name}".`,
+          ].join(" "),
+          severity: "error",
+        });
 
-          continue;
-        }
-
-        const dependencyId = ids.get(dependency);
-
-        if (!dependencyId) {
-          dependencies.push(`${dependency.name}`);
-
-          continue;
-        }
-
-        dependencies.push(dependencyId);
+        continue;
       }
 
-      declarations.push({
-        dependencies,
-        id,
-        name: value.name,
-        scope: value.scope,
-        source: entry.source.path,
-      });
+      dependencies.push(dependencyId);
     }
+
+    declarations.push({
+      dependencies,
+      id: entry.id,
+      name: entry.name,
+      scope: entry.scope,
+      source: entry.source,
+    });
   }
 
-  const graphResult = createDependencyGraph(declarations);
+  const result = createDependencyGraph(declarations, references);
 
   return {
-    diagnostics: [...diagnostics, ...graphResult.diagnostics],
-    graph: graphResult.graph,
+    diagnostics: [...diagnostics, ...result.diagnostics],
+    graph: result.graph,
   };
 };
 

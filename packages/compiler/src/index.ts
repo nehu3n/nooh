@@ -1,8 +1,12 @@
 /** biome-ignore-all lint/performance/noBarrelFile: ... */
 
 export { compile } from "@/compile";
-export { createCompiler, introspect } from "@/compiler";
+export {
+  createCompiler,
+  introspect,
+} from "@/compiler";
 export { diff } from "@/diff";
+export { finalizeCompilation } from "@/finalize";
 export {
   generate,
   generateRouteIntrospection,

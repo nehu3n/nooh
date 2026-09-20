@@ -19,6 +19,7 @@ import type {
 const emptyDependencies = {
   nodes: new Map(),
   order: [],
+  references: new Map(),
 };
 
 export const createCompiler = (): NoohCompiler => ({
@@ -32,6 +33,7 @@ export const createCompiler = (): NoohCompiler => ({
         diagnostics: configResult.diagnostics,
         model: {
           config: {
+            dependenciesRoot: "",
             root: input.root ? input.root.replaceAll("\\", "/") : "",
             routesRoot: "",
             source: input.config,
