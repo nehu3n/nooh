@@ -126,8 +126,40 @@ export interface RouteGroup {
   readonly routes: readonly string[];
 }
 
+export type DependencyScope = "value" | "singleton" | "request" | "transient";
+
+export const DEPENDENCY_SCOPES: readonly [
+  "value",
+  "singleton",
+  "request",
+  "transient",
+] = [
+  "value",
+  "singleton",
+  "request",
+  "transient",
+] as const satisfies readonly DependencyScope[];
+
+export interface DependencyDeclaration {
+  readonly dependencies: readonly string[];
+  readonly id: string;
+  readonly name: string;
+  readonly scope: DependencyScope;
+  readonly source: string;
+}
+
+export interface DependencyNode {
+  readonly declaration: DependencyDeclaration;
+}
+
+export interface DependencyGraph {
+  readonly nodes: ReadonlyMap<string, DependencyNode>;
+  readonly order: readonly string[];
+}
+
 export interface ProjectModel {
   readonly config: LoadedConfig;
+  readonly dependencies: DependencyGraph;
   readonly groups: readonly RouteGroup[];
   readonly routes: readonly RouteModel[];
 }
@@ -157,6 +189,7 @@ export interface ModulePlan {
 }
 
 export interface CompilationPlan {
+  readonly dependencies: DependencyGraph;
   readonly modules: readonly ModulePlan[];
   readonly outputRoot: string;
 }

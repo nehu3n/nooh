@@ -66,6 +66,7 @@ export const plan = (
   modules.sort((a, b) => a.id.localeCompare(b.id));
 
   return {
+    dependencies: model.dependencies,
     modules,
     outputRoot: normalizedOutputRoot,
   };

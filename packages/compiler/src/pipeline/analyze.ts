@@ -1,3 +1,5 @@
+import { createDependencyGraph } from "@/pipeline/dependencies";
+
 import type {
   Diagnostic,
   LoadedConfig,
@@ -271,10 +273,15 @@ export const analyze = (
 
   const groups = buildGroups(parsed, routeModels, diagnostics);
 
+  const dependencyResult = createDependencyGraph([]);
+
+  diagnostics.push(...dependencyResult.diagnostics);
+
   return {
     diagnostics,
     model: {
       config,
+      dependencies: dependencyResult.graph,
       groups,
       routes: routeModels,
     },
