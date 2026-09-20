@@ -65,6 +65,7 @@ export interface DiscoveredGroup {
 
 export interface DiscoveredProject {
   readonly config: LoadedConfig;
+  readonly dependencies: readonly SourceFile[];
   readonly endpoints: readonly DiscoveredEndpoint[];
   readonly groups: readonly DiscoveredGroup[];
 }
@@ -214,7 +215,8 @@ export interface Compilation {
 export interface NoohCompiler {
   analyze: (
     parsed: ParsedProject,
-    config: LoadedConfig
+    config: LoadedConfig,
+    dependencies?: DependencyGraph
   ) => {
     model: ProjectModel;
     diagnostics: readonly Diagnostic[];

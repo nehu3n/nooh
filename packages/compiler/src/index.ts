@@ -9,6 +9,7 @@ export { loadConfig } from "@/pipeline/config";
 export {
   createDependencyGraph,
   dependencyClosure,
+  loadDependencyGraph,
 } from "@/pipeline/dependencies";
 export { discover } from "@/pipeline/discover";
 export { parse } from "@/pipeline/parse";

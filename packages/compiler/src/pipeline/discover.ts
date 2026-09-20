@@ -15,6 +15,8 @@ import {
   toProjectPath,
 } from "@/utils/path";
 
+const DEFAULT_DEPENDENCIES_ROOT = "src/deps";
+
 const ROUTE_FILE_PATTERN =
   /\.(get|post|put|patch|delete|options|head|all)\.(?:ts|tsx)$/;
 
@@ -28,6 +30,25 @@ const isGroupFile = (filePath: string): boolean => {
   const filename = basename(filePath);
 
   return filename === "$.ts" || filename === "$.tsx";
+};
+
+const isDependencyFile = (filePath: string): boolean =>
+  isPathInside(filePath, DEFAULT_DEPENDENCIES_ROOT);
+
+const discoverDependency = (
+  config: LoadedConfig,
+  file: SourceFile
+): SourceFile | null => {
+  const source = toProjectPath(file.path, config.root);
+
+  if (!isDependencyFile(source)) {
+    return null;
+  }
+
+  return {
+    content: file.content,
+    path: source,
+  };
 };
 
 const discoverGroup = (
@@ -82,9 +103,17 @@ export const discover = (
 ): DiscoveredProject => {
   const endpoints: DiscoveredEndpoint[] = [];
   const groups: DiscoveredGroup[] = [];
+  const dependencies: SourceFile[] = [];
 
   for (const file of snapshot.files) {
     if (!isTypeScriptFile(file)) {
+      continue;
+    }
+
+    const dependency = discoverDependency(config, file);
+
+    if (dependency) {
+      dependencies.push(dependency);
       continue;
     }
 
@@ -101,12 +130,14 @@ export const discover = (
       endpoints.push(endpoint);
     }
   }
+  dependencies.sort((a, b) => a.path.localeCompare(b.path));
 
   endpoints.sort((a, b) => a.source.localeCompare(b.source));
   groups.sort((a, b) => a.source.localeCompare(b.source));
 
   return {
     config,
+    dependencies,
     endpoints,
     groups,
   };

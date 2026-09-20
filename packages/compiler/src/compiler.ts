@@ -2,6 +2,7 @@ import { generate } from "@/generate";
 
 import { analyze } from "@/pipeline/analyze";
 import { loadConfig } from "@/pipeline/config";
+import { loadDependencyGraph } from "@/pipeline/dependencies";
 import { discover } from "@/pipeline/discover";
 import { parse } from "@/pipeline/parse";
 import { plan } from "@/pipeline/plan";
@@ -24,6 +25,12 @@ export const createCompiler = (): NoohCompiler => ({
             source: input.config,
             value: {},
           },
+
+          dependencies: {
+            nodes: new Map(),
+            order: [],
+          },
+
           groups: [],
           routes: [],
         },
@@ -34,8 +41,23 @@ export const createCompiler = (): NoohCompiler => ({
 
     const discovered = discover(input.sources, configResult.config);
     const parsed = parse(discovered);
-    const analyzed = analyze(parsed, configResult.config);
-    const diagnostics = [...configResult.diagnostics, ...analyzed.diagnostics];
+
+    const dependencyResult = await loadDependencyGraph(
+      discovered.dependencies,
+      input.loader
+    );
+
+    const analyzed = analyze(
+      parsed,
+      configResult.config,
+      dependencyResult.graph
+    );
+
+    const diagnostics = [
+      ...configResult.diagnostics,
+      ...dependencyResult.diagnostics,
+      ...analyzed.diagnostics,
+    ];
 
     const hasErrors = diagnostics.some(
       (diagnostic) => diagnostic.severity === "error"

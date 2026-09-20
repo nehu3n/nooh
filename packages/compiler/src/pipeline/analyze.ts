@@ -1,6 +1,5 @@
-import { createDependencyGraph } from "@/pipeline/dependencies";
-
 import type {
+  DependencyGraph,
   Diagnostic,
   LoadedConfig,
   ParsedProject,
@@ -11,6 +10,11 @@ import type {
   RouteSegment,
 } from "@/types";
 import { ensureLeadingSlash, normalizePath } from "@/utils/path";
+
+const emptyDependencyGraph = (): DependencyGraph => ({
+  nodes: new Map(),
+  order: [],
+});
 
 const segmentToHono = (segment: RouteSegment): string => {
   // biome-ignore lint/style/useDefaultSwitchClause: ...
@@ -106,8 +110,11 @@ const parentGroupPath = (groupPath: string): string | null => {
 const getAncestorGroupPaths = (groupPath: string): readonly string[] => {
   const parts = normalizePath(groupPath).split("/").filter(Boolean);
 
-  return Array.from({ length: parts.length + 1 }, (_, index) =>
-    parts.slice(0, index).join("/")
+  return Array.from(
+    {
+      length: parts.length + 1,
+    },
+    (_, index) => parts.slice(0, index).join("/")
   );
 };
 
@@ -222,7 +229,8 @@ const buildGroups = (
 
 export const analyze = (
   parsed: ParsedProject,
-  config: LoadedConfig
+  config: LoadedConfig,
+  dependencies: DependencyGraph = emptyDependencyGraph()
 ): {
   model: ProjectModel;
   diagnostics: readonly Diagnostic[];
@@ -273,15 +281,11 @@ export const analyze = (
 
   const groups = buildGroups(parsed, routeModels, diagnostics);
 
-  const dependencyResult = createDependencyGraph([]);
-
-  diagnostics.push(...dependencyResult.diagnostics);
-
   return {
     diagnostics,
     model: {
       config,
-      dependencies: dependencyResult.graph,
+      dependencies,
       groups,
       routes: routeModels,
     },
