@@ -13,9 +13,6 @@ import {
   text,
 } from "@clack/prompts";
 
-const NOOH_VERSION = "latest";
-const CLI_VERSION = "latest";
-
 type PackageManager = "pnpm" | "npm" | "yarn" | "bun";
 
 interface ProjectOptions {
@@ -97,12 +94,11 @@ const packageJson = (name: string): string =>
     {
       dependencies: {
         "@hono/standard-validator": "latest",
-        "@nooh-ts/nooh": `${NOOH_VERSION}`,
+        "@nooh-ts/nooh": "latest",
         hono: "latest",
       },
       devDependencies: {
-        "@nooh-ts/cli": `${CLI_VERSION}`,
-        tsx: "latest",
+        "@nooh-ts/cli": "latest",
         typescript: "latest",
       },
       engines: {
@@ -112,7 +108,7 @@ const packageJson = (name: string): string =>
       private: true,
       scripts: {
         build: "nooh build",
-        dev: "nooh dev -- tsx src/index.ts",
+        dev: "nooh dev",
         typecheck: "tsc --noEmit",
       },
       type: "module",
@@ -151,22 +147,26 @@ A [Nooh](https://github.com/nehu3n/nooh) application.
 
 ## Development
 
-Install dependencies:
+#### Install dependencies:
 
 \`\`\`bash
 ${packageManagerCommand(detectPackageManager())} install
 \`\`\`
 
-Start the development server:
+#### Add a entrypoint
 
-\`\`\`bash
-${packageManagerCommand(detectPackageManager())} dev
-\`\`\`
+Modify \`src/index.ts\` to set an entry point, and modify the \`dev\` script to run the appropriate command to start the app.
 
-Build the application:
+#### Build application
 
 \`\`\`bash
 ${packageManagerCommand(detectPackageManager())} build
+\`\`\`
+
+#### Start the development server:
+
+\`\`\`bash
+${packageManagerCommand(detectPackageManager())} dev
 \`\`\`
 
 ## Routes
