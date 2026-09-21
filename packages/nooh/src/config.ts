@@ -1,8 +1,10 @@
-import type { Env, ErrorHandler } from "hono";
+import type { Env } from "hono";
+
+import type { NoohErrorHandler } from "@/errors";
 
 export interface NoohConfigOptions<Environment extends Env = Env> {
   readonly dependencies?: string;
-  readonly onError?: ErrorHandler<Environment>;
+  readonly onError?: NoohErrorHandler<Environment>;
   readonly routes?: string;
 }
 
@@ -22,7 +24,7 @@ export interface NoohGroupOptions<
   Middleware = unknown,
 > {
   readonly middleware?: readonly Middleware[];
-  readonly onError?: ErrorHandler<Environment>;
+  readonly onError?: NoohErrorHandler<Environment>;
 }
 
 export interface NoohGroup<
@@ -30,7 +32,7 @@ export interface NoohGroup<
   Middleware = unknown,
 > {
   readonly middleware?: readonly Middleware[];
-  readonly onError?: ErrorHandler<Environment>;
+  readonly onError?: NoohErrorHandler<Environment>;
 }
 
 export const config = <Environment extends Env>(

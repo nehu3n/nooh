@@ -85,6 +85,8 @@ const renderMethod = (
     "",
     `type ${prefix}RouteNext = Parameters<${prefix}RouteHandler>[1];`,
     "",
+    `type ${prefix}RouteErrorHandler = NoohErrorHandler<App, ${prefix}Path>;`,
+    "",
     `type ${prefix}ValidationInput<V extends ValidationOptions> =`,
     "  keyof V extends never",
     "    ? {}",
@@ -120,7 +122,7 @@ const renderMethod = (
     `) => ReturnType<${prefix}RouteHandler>;`,
     "",
     `type ${prefix}RouteHandlers = readonly ${prefix}RouteHandler[] & {`,
-    "  readonly onError?: ErrorHandler<App>;",
+    `  readonly onError?: ${prefix}RouteErrorHandler;`,
     "};",
     "",
 
@@ -134,7 +136,7 @@ const renderMethod = (
     "  readonly validation?: V;",
     "  readonly deps?: D & ValidateDependencies<D, ReservedDependencyName>;",
     "  readonly errors?: E;",
-    "  readonly onError?: ErrorHandler<App>;",
+    `  readonly onError?: ${prefix}RouteErrorHandler;`,
     `  readonly handler: ${prefix}NoohHandler<D, V, E>;`,
     "};",
     "",
@@ -343,12 +345,13 @@ export const generateRouterModule = (
   const usesErrors = mode === "runtime";
 
   const imports: string[] = [
-    `import type { ErrorHandler, Handler, MiddlewareHandler } from "hono";`,
+    `import type { Handler, MiddlewareHandler } from "hono";`,
     "import type {",
     "  AnyDependencyReference,",
     "  DependencyContext,",
     "  ErrorContext,",
     "  ErrorConstructor,",
+    "  NoohErrorHandler,",
     "  ValidateDependencies,",
     '} from "@nooh-ts/nooh";',
     `import type { App } from ${JSON.stringify(
@@ -398,8 +401,8 @@ export const generateRouterModule = (
       "  const T extends readonly Handler<App, any, any, any>[],",
       ">(",
       "  handlers: T,",
-      "  onError?: ErrorHandler<App>,",
-      "): T & { readonly onError?: ErrorHandler<App> } => {",
+      "  onError?: NoohErrorHandler<App, string>,",
+      "): T & { readonly onError?: NoohErrorHandler<App, string> } => {",
       "  if (onError !== undefined) {",
       '    Object.defineProperty(handlers, "onError", {',
       "      configurable: false,",
@@ -409,7 +412,9 @@ export const generateRouterModule = (
       "    });",
       "  }",
       "",
-      "  return handlers as T & { readonly onError?: ErrorHandler<App> };",
+      "  return handlers as T & {",
+      "    readonly onError?: NoohErrorHandler<App, string>;",
+      "  };",
       "};"
     );
   }

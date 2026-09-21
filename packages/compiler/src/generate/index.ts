@@ -26,7 +26,7 @@ export const generate = (
 
   modules.push(generateDependencyModule(plan));
 
-  modules.push(generateErrorModule(plan, model));
+  modules.push(generateErrorModule(plan));
 
   modules.push(generateMiddlewareModule(plan));
 

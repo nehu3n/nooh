@@ -41,4 +41,5 @@ export type {
   ErrorConstructor,
   ErrorContext,
   ErrorFactory,
+  NoohErrorHandler,
 } from "@/errors";
