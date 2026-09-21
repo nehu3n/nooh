@@ -1,5 +1,6 @@
 import { generateAppModule } from "@/generate/app";
 import { generateDependencyModule } from "@/generate/dependency";
+import { generateErrorModule } from "@/generate/error";
 import { generateGroupModule } from "@/generate/group";
 import { generateMiddlewareModule } from "@/generate/middleware";
 import { generateRouterModule } from "@/generate/router";
@@ -24,6 +25,8 @@ export const generate = (
   modules.push(generateTypesModule(plan, model.config));
 
   modules.push(generateDependencyModule(plan));
+
+  modules.push(generateErrorModule(plan, model));
 
   modules.push(generateMiddlewareModule(plan));
 

@@ -25,6 +25,10 @@ export const plan = (
       id: modulePath(normalizedOutputRoot, "router/middleware"),
       kind: "middleware",
     },
+    {
+      id: modulePath(normalizedOutputRoot, "error"),
+      kind: "error",
+    },
   ];
 
   const routerPaths = [

@@ -195,6 +195,7 @@ export type ModuleKind =
   | "middleware"
   | "group"
   | "di"
+  | "error"
   | "app";
 
 export interface ModulePlan {
