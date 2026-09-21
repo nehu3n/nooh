@@ -5,7 +5,8 @@
     "paths": {
       "@router/*": ["./.nooh/router/*"],
       "@middleware/*": ["./src/middleware/*"],
-      "@deps/*": ["./src/deps/*"]
+      "@deps/*": ["./src/deps/*"],
+      "@errors/*": ["./src/errors/*"]
     }
   },
   "include": ["src/**/*.ts", ".nooh/**/*.ts", "nooh.config.ts"]

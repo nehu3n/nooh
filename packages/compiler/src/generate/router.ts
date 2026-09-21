@@ -98,31 +98,42 @@ const renderMethod = (
     `type ${prefix}HandlerInput<`,
     "  D extends readonly RouteDependency[],",
     "  V extends ValidationOptions,",
+    "  E extends ErrorDefinitions,",
     "> = {",
     `  readonly c: ${prefix}RouteContext;`,
     `  readonly next: ${prefix}RouteNext;`,
     "}",
     `  & ${prefix}ValidationInput<V>`,
-    "  & DependencyContext<D>;",
+    "  & DependencyContext<D>",
+    "  & (",
+    "      keyof E extends never",
+    "        ? {}",
+    "        : { readonly errors: ErrorContext<E> }",
+    "    );",
     "",
     `type ${prefix}NoohHandler<`,
     "  D extends readonly RouteDependency[],",
     "  V extends ValidationOptions,",
+    "  E extends ErrorDefinitions,",
     "> = (",
-    `  input: ${prefix}HandlerInput<D, V>,`,
+    `  input: ${prefix}HandlerInput<D, V, E>,`,
     `) => ReturnType<${prefix}RouteHandler>;`,
     "",
+
     `type ${prefix}EndpointOptions<`,
     "  D extends readonly RouteDependency[] = readonly RouteDependency[],",
     "  V extends ValidationOptions = ValidationOptions,",
     `  M extends readonly ${prefix}RouteMiddleware[] = readonly ${prefix}RouteMiddleware[],`,
+    "  E extends ErrorDefinitions = {},",
     "> = {",
     "  readonly middleware?: M;",
     "  readonly validation?: V;",
     "  readonly deps?: D & ValidateDependencies<D, ReservedDependencyName>;",
-    `  readonly handler: ${prefix}NoohHandler<D, V>;`,
+    "  readonly errors?: E;",
+    `  readonly handler: ${prefix}NoohHandler<D, V, E>;`,
     "};",
     "",
+
     `export function ${functionName}(`,
     `  handler: ${prefix}RouteHandler,`,
     `): readonly ${prefix}RouteHandler[];`,
@@ -131,8 +142,9 @@ const renderMethod = (
     "  const D extends readonly RouteDependency[] = [],",
     "  const V extends ValidationOptions = {},",
     `  const M extends readonly ${prefix}RouteMiddleware[] = [],`,
+    "  const E extends ErrorDefinitions = {},",
     ">(",
-    `  options: ${prefix}EndpointOptions<D, V, M>,`,
+    `  options: ${prefix}EndpointOptions<D, V, M, E>,`,
     `): readonly ${prefix}RouteHandler[];`,
     "",
     `export function ${functionName}(`,
@@ -180,6 +192,11 @@ const renderMethod = (
     "",
     "  const dependencies = input.deps ?? [];",
     "",
+    "  const errors =",
+    "    input.errors === undefined",
+    "      ? undefined",
+    "      : createErrorContext(input.errors);",
+    "",
     `  const handler: ${prefix}RouteHandler = (c, next) => {`,
     ...(dependencyNames.length > 0
       ? [
@@ -211,7 +228,8 @@ const renderMethod = (
     "      c,",
     "      next,",
     "      ...validationInput,",
-    ...dependencyProperties,
+    ...(dependencyNames.length > 0 ? dependencyProperties : []),
+    "      ...(errors !== undefined ? { errors } : {}),",
     "    });",
     "  };",
     "",
@@ -232,6 +250,8 @@ const renderMethod = (
 
 const COMMON_TYPES = [
   "type RouteDependency = AnyDependencyReference;",
+  "",
+  "type ErrorDefinitions = Record<string, ErrorConstructor>;",
   "",
   "type StandardSchema = {",
   '  readonly "~standard": {',
@@ -284,6 +304,7 @@ const COMMON_TYPES = [
   '  | "c"',
   '  | "next"',
   '  | "error"',
+  '  | "errors"',
   "  | ValidationTarget;",
 ];
 
@@ -305,14 +326,19 @@ export const generateRouterModule = (
     mode === "runtime" &&
     routes.some((route) => {
       const dependencyModel = getRouteDependencyModel(model, route.id);
+
       return !!dependencyModel?.roots.length;
     });
+
+  const usesErrors = mode === "runtime";
 
   const imports: string[] = [
     `import type { Handler, MiddlewareHandler } from "hono";`,
     "import type {",
     "  AnyDependencyReference,",
     "  DependencyContext,",
+    "  ErrorContext,",
+    "  ErrorConstructor,",
     "  ValidateDependencies,",
     '} from "@nooh-ts/nooh";',
     `import type { App } from ${JSON.stringify(
@@ -335,6 +361,30 @@ export const generateRouterModule = (
   }
 
   const prelude: string[] = ["", ...COMMON_TYPES];
+
+  if (usesErrors) {
+    prelude.push(
+      "",
+      "const createErrorContext = <",
+      "  const E extends ErrorDefinitions,",
+      ">(",
+      "  definitions: E | undefined,",
+      "): ErrorContext<E> => {",
+      "  const errors: Record<string, unknown> = {};",
+      "",
+      "  if (definitions === undefined) {",
+      "    return errors as ErrorContext<E>;",
+      "  }",
+      "",
+      "  for (const [name, Constructor] of Object.entries(definitions)) {",
+      "    errors[name] = (...args: unknown[]) =>",
+      "      Reflect.construct(Constructor, args);",
+      "  }",
+      "",
+      "  return errors as ErrorContext<E>;",
+      "};"
+    );
+  }
 
   if (mode === "introspection") {
     prelude.push(

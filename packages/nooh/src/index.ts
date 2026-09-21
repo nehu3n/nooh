@@ -37,3 +37,8 @@ export {
   transient,
   value,
 } from "@/di";
+export type {
+  ErrorConstructor,
+  ErrorContext,
+  ErrorFactory,
+} from "@/errors";
