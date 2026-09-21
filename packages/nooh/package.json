@@ -40,7 +40,8 @@
     "typescript": "catalog:"
   },
   "peerDependencies": {
-    "@hono/standard-validator": "^0.4.0"
+    "@hono/standard-validator": "^0.4.0",
+    "hono": "catalog:"
   },
   "publishConfig": {
     "access": "public"
