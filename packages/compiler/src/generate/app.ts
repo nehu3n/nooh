@@ -9,6 +9,7 @@ export const generateAppModule = (
 ): GeneratedModule => {
   const moduleId = `${plan.outputRoot}/app.ts`;
   const typesModuleId = `${plan.outputRoot}/types.ts`;
+  const errorModuleId = `${plan.outputRoot}/error.ts`;
 
   const root = model.groups.find((group) => group.id === "root");
 
@@ -18,8 +19,14 @@ export const generateAppModule = (
 
   const imports = [
     `import { Hono } from "hono";`,
+    `import config from ${JSON.stringify(
+      relativeModuleSpecifier(moduleId, model.config.source)
+    )};`,
     `import type { App } from ${JSON.stringify(
       relativeModuleSpecifier(moduleId, typesModuleId)
+    )};`,
+    `import { defaultErrorHandler } from ${JSON.stringify(
+      relativeModuleSpecifier(moduleId, errorModuleId)
     )};`,
     `import root from ${JSON.stringify(
       relativeModuleSpecifier(moduleId, groupModuleId(plan, root.id))
@@ -30,6 +37,8 @@ export const generateAppModule = (
     ...imports,
     "",
     "const app = new Hono<App>();",
+    "",
+    "app.onError(config.onError ?? defaultErrorHandler);",
     "",
     'app.route("/", root);',
     "",

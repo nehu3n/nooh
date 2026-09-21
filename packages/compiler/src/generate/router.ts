@@ -119,6 +119,10 @@ const renderMethod = (
     `  input: ${prefix}HandlerInput<D, V, E>,`,
     `) => ReturnType<${prefix}RouteHandler>;`,
     "",
+    `type ${prefix}RouteHandlers = readonly ${prefix}RouteHandler[] & {`,
+    "  readonly onError?: ErrorHandler<App>;",
+    "};",
+    "",
 
     `type ${prefix}EndpointOptions<`,
     "  D extends readonly RouteDependency[] = readonly RouteDependency[],",
@@ -130,13 +134,14 @@ const renderMethod = (
     "  readonly validation?: V;",
     "  readonly deps?: D & ValidateDependencies<D, ReservedDependencyName>;",
     "  readonly errors?: E;",
+    "  readonly onError?: ErrorHandler<App>;",
     `  readonly handler: ${prefix}NoohHandler<D, V, E>;`,
     "};",
     "",
 
     `export function ${functionName}(`,
     `  handler: ${prefix}RouteHandler,`,
-    `): readonly ${prefix}RouteHandler[];`,
+    `): ${prefix}RouteHandlers;`,
     "",
     `export function ${functionName}<`,
     "  const D extends readonly RouteDependency[] = [],",
@@ -145,13 +150,13 @@ const renderMethod = (
     "  const E extends ErrorDefinitions = {},",
     ">(",
     `  options: ${prefix}EndpointOptions<D, V, M, E>,`,
-    `): readonly ${prefix}RouteHandler[];`,
+    `): ${prefix}RouteHandlers;`,
     "",
     `export function ${functionName}(`,
     "  input:",
     `    | ${prefix}RouteHandler`,
     `    | ${prefix}EndpointOptions,`,
-    `): readonly ${prefix}RouteHandler[] {`,
+    `): ${prefix}RouteHandlers {`,
   ];
 
   if (mode === "introspection") {
@@ -162,13 +167,15 @@ const renderMethod = (
       "    return defineRouteMetadata(",
       "      [input],",
       "      [],",
-      "    );",
+      "    ) as unknown as",
+      `      ${prefix}RouteHandlers;`,
       "  }",
       "",
       "  return defineRouteMetadata(",
       `    [input.handler as unknown as ${prefix}RouteHandler],`,
       "    input.deps ?? [],",
-      "  );",
+      "  ) as unknown as",
+      `    ${prefix}RouteHandlers;`,
       "}",
       "",
     ].join("\n");
@@ -187,7 +194,7 @@ const renderMethod = (
     ...common,
     "",
     '  if (typeof input === "function") {',
-    "    return [input];",
+    "    return defineRouteHandlers([input]);",
     "  }",
     "",
     "  const dependencies = input.deps ?? [];",
@@ -233,7 +240,7 @@ const renderMethod = (
     "    });",
     "  };",
     "",
-    "  return [",
+    "  const handlers = [",
     `    ...((input.middleware ?? []) as readonly ${prefix}RouteHandler[]),`,
     ...(["json", "form", "query", "param", "header", "cookie"] as const).map(
       (target) =>
@@ -242,7 +249,9 @@ const renderMethod = (
         )}, input.validation.${target}) as ${prefix}RouteHandler] : []),`
     ),
     "    handler,",
-    "  ];",
+    "  ] as const;",
+    "",
+    "  return defineRouteHandlers(handlers, input.onError);",
     "}",
     "",
   ].join("\n");
@@ -305,6 +314,7 @@ const COMMON_TYPES = [
   '  | "next"',
   '  | "error"',
   '  | "errors"',
+  '  | "onError"',
   "  | ValidationTarget;",
 ];
 
@@ -333,7 +343,7 @@ export const generateRouterModule = (
   const usesErrors = mode === "runtime";
 
   const imports: string[] = [
-    `import type { Handler, MiddlewareHandler } from "hono";`,
+    `import type { ErrorHandler, Handler, MiddlewareHandler } from "hono";`,
     "import type {",
     "  AnyDependencyReference,",
     "  DependencyContext,",
@@ -382,6 +392,24 @@ export const generateRouterModule = (
       "  }",
       "",
       "  return errors as ErrorContext<E>;",
+      "};",
+      "",
+      "const defineRouteHandlers = <",
+      "  const T extends readonly Handler<App, any, any, any>[],",
+      ">(",
+      "  handlers: T,",
+      "  onError?: ErrorHandler<App>,",
+      "): T & { readonly onError?: ErrorHandler<App> } => {",
+      "  if (onError !== undefined) {",
+      '    Object.defineProperty(handlers, "onError", {',
+      "      configurable: false,",
+      "      enumerable: false,",
+      "      value: onError,",
+      "      writable: false,",
+      "    });",
+      "  }",
+      "",
+      "  return handlers as T & { readonly onError?: ErrorHandler<App> };",
       "};"
     );
   }

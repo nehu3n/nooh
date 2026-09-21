@@ -129,12 +129,23 @@ export const generateGroupModule = (
       ]
     : [];
 
-  const registrations = routes.map((route, index) => {
+  const routeRegistrations = routes.map((route, index) => {
     const register = `register${capitalize(route.method)}`;
+    const path = JSON.stringify(ensureLeadingSlash(route.localPath));
+    const endpointApp = `endpointApp${index}`;
+    const endpointRegister = `registerEndpoint${index}`;
 
-    return `  ${register}(${JSON.stringify(
-      ensureLeadingSlash(route.localPath)
-    )}, ...endpoint${index});`;
+    return [
+      `  if (endpoint${index}.onError === undefined) {`,
+      `    ${register}(${path}, ...endpoint${index});`,
+      "  } else {",
+      `    const ${endpointApp} = new Hono<App>();`,
+      `    ${endpointApp}.onError(endpoint${index}.onError);`,
+      `    const ${endpointRegister} = ${endpointApp}.${route.method} as unknown as RouteRegister;`,
+      `    ${endpointRegister}(${path}, ...endpoint${index});`,
+      `    route.route(${path}, ${endpointApp});`,
+      "  }",
+    ].join("\n");
   });
 
   const childRegistrations = children.map(
@@ -143,6 +154,15 @@ export const generateGroupModule = (
         getChildPath(group, child)
       )}, child${index});`
   );
+
+  const groupErrorHandler = group.configSource
+    ? [
+        "",
+        "if (groupConfig.onError !== undefined) {",
+        "  route.onError(groupConfig.onError);",
+        "}",
+      ]
+    : [];
 
   const code = [
     ...imports,
@@ -153,7 +173,8 @@ export const generateGroupModule = (
     "",
     ...registerDeclarations,
     ...(useDeclaration.length > 0 ? ["", ...useDeclaration] : []),
-    ...(registrations.length > 0 ? ["", ...registrations] : []),
+    ...groupErrorHandler,
+    ...(routeRegistrations.length > 0 ? ["", ...routeRegistrations] : []),
     ...(childRegistrations.length > 0 ? ["", ...childRegistrations] : []),
     "",
     "export default route;",
