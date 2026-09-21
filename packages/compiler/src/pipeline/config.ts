@@ -9,6 +9,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 
 const isString = (value: unknown): value is string => typeof value === "string";
 
+const isFunction = (value: unknown): value is (...args: never[]) => unknown =>
+  typeof value === "function";
+
 export const loadConfig = async (
   input: CompileInput
 ): Promise<ConfigLoadResult> => {
@@ -69,6 +72,39 @@ export const loadConfig = async (
           code: "NOOH013",
           file: input.config,
           message: 'The Nooh config "dependencies" option must be a string.',
+          severity: "error",
+        },
+      ],
+    };
+  }
+
+  const validatorValue = defaultExport.validator;
+
+  if (validatorValue !== undefined && !isRecord(validatorValue)) {
+    return {
+      diagnostics: [
+        {
+          code: "NOOH014",
+          file: input.config,
+          message: 'The Nooh config "validator" option must be an object.',
+          severity: "error",
+        },
+      ],
+    };
+  }
+
+  if (
+    isRecord(validatorValue) &&
+    validatorValue.engine !== undefined &&
+    !isFunction(validatorValue.engine)
+  ) {
+    return {
+      diagnostics: [
+        {
+          code: "NOOH015",
+          file: input.config,
+          message:
+            'The Nooh config "validator.engine" option must be a function.',
           severity: "error",
         },
       ],

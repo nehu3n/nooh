@@ -72,7 +72,16 @@ const renderMethod = (
   const prefix = functionName.charAt(0).toUpperCase() + functionName.slice(1);
 
   const path = JSON.stringify(ensureLeadingSlash(route.localPath));
+  const routeLabel = JSON.stringify(
+    `${route.method.toUpperCase()} ${ensureLeadingSlash(route.localPath)}`
+  );
+
   const dependencyNames = getDependencyNames(model, route);
+
+  const validationTargetType =
+    route.method === "get" || route.method === "head"
+      ? `Exclude<NoohRequestValidationTarget, "json" | "form">`
+      : "NoohRequestValidationTarget";
 
   const common = [
     `type ${prefix}Path = ${path};`,
@@ -81,31 +90,94 @@ const renderMethod = (
     "",
     `type ${prefix}RouteHandler = Handler<App, ${prefix}Path, any, any>;`,
     "",
-    `type ${prefix}RouteContext = Parameters<${prefix}RouteHandler>[0];`,
+    `type ${prefix}RouteContext<V extends ${prefix}ValidationOptions> =`,
+    `  Context<App, ${prefix}Path, ${prefix}ValidationInput<V>>;`,
     "",
     `type ${prefix}RouteNext = Parameters<${prefix}RouteHandler>[1];`,
     "",
     `type ${prefix}RouteErrorHandler = NoohErrorHandler<App, ${prefix}Path>;`,
     "",
-    `type ${prefix}ValidationInput<V extends ValidationOptions> =`,
+    `type ${prefix}ValidationTarget = ${validationTargetType};`,
+    "",
+
+    `type ${prefix}ValidationOptions =`,
+    "  Partial<Record<",
+    `    ${prefix}ValidationTarget,`,
+    "    NoohStandardSchema,",
+    "  >> & {",
+    "    readonly response?: NoohStandardSchema;",
+    "  };",
+    "",
+
+    `type ${prefix}ValidationEntry<`,
+    `  Target extends ${prefix}ValidationTarget,`,
+    "  Schema extends NoohStandardSchema,",
+    "> = undefined extends NoohStandardSchemaInput<Schema>",
+    "  ? {",
+    "      readonly in: {",
+    "        readonly [Key in Target]?: NoohStandardSchemaInput<Schema>;",
+    "      };",
+    "      readonly out: {",
+    "        readonly [Key in Target]: NoohStandardSchemaOutput<Schema>;",
+    "      };",
+    "    }",
+    "  : {",
+    "      readonly in: {",
+    "        readonly [Key in Target]: NoohStandardSchemaInput<Schema>;",
+    "      };",
+    "      readonly out: {",
+    "        readonly [Key in Target]: NoohStandardSchemaOutput<Schema>;",
+    "      };",
+    "    };",
+    "",
+
+    `type ${prefix}ValidationInput<V extends ${prefix}ValidationOptions> =`,
     "  keyof V extends never",
     "    ? {}",
     "    : UnionToIntersection<{",
-    "        [Target in keyof V & ValidationTarget]:",
-    "          V[Target] extends StandardSchema",
-    "            ? ValidationEntry<Target, V[Target]>",
+    `        [Target in keyof V & ${prefix}ValidationTarget]:`,
+    "          V[Target] extends NoohStandardSchema",
+    "            ? ",
+    `              ${prefix}ValidationEntry<Target, V[Target]>`,
     "            : never;",
-    "      }[keyof V & ValidationTarget]>;",
+    "      }[keyof V &",
+    `        ${prefix}ValidationTarget]>;`,
+    "",
+    `type ${prefix}ResponseSchema<V extends ${prefix}ValidationOptions> =`,
+    "  V extends {",
+    "    readonly response: infer Schema extends NoohStandardSchema;",
+    "  }",
+    "    ? Schema",
+    "    : never;",
+    "",
+    `type ${prefix}NoohHandlerReturn<V extends ${prefix}ValidationOptions> =`,
+    "  V extends {",
+    "    readonly response: infer Schema extends NoohStandardSchema;",
+    "  }",
+    "    ? Response &",
+    "        TypedResponse<",
+    "          NoohStandardSchemaInput<Schema>,",
+    "          any,",
+    "          any,",
+    "        >",
+    "      | Promise<",
+    "          Response &",
+    "            TypedResponse<",
+    "              NoohStandardSchemaInput<Schema>,",
+    "              any,",
+    "              any,",
+    "            >",
+    "        >",
+    `    : ReturnType<${prefix}RouteHandler>;`,
     "",
     `type ${prefix}HandlerInput<`,
     "  D extends readonly RouteDependency[],",
-    "  V extends ValidationOptions,",
+    `  V extends ${prefix}ValidationOptions,`,
     "  E extends ErrorDefinitions,",
     "> = {",
-    `  readonly c: ${prefix}RouteContext;`,
+    `  readonly c: ${prefix}RouteContext<V>;`,
     `  readonly next: ${prefix}RouteNext;`,
     "}",
-    `  & ${prefix}ValidationInput<V>`,
     "  & DependencyContext<D>",
     "  & (",
     "      keyof E extends never",
@@ -115,11 +187,11 @@ const renderMethod = (
     "",
     `type ${prefix}NoohHandler<`,
     "  D extends readonly RouteDependency[],",
-    "  V extends ValidationOptions,",
+    `  V extends ${prefix}ValidationOptions,`,
     "  E extends ErrorDefinitions,",
     "> = (",
     `  input: ${prefix}HandlerInput<D, V, E>,`,
-    `) => ReturnType<${prefix}RouteHandler>;`,
+    `) => ${prefix}NoohHandlerReturn<V>;`,
     "",
     `type ${prefix}RouteHandlers = readonly ${prefix}RouteHandler[] & {`,
     `  readonly onError?: ${prefix}RouteErrorHandler;`,
@@ -128,7 +200,7 @@ const renderMethod = (
 
     `type ${prefix}EndpointOptions<`,
     "  D extends readonly RouteDependency[] = readonly RouteDependency[],",
-    "  V extends ValidationOptions = ValidationOptions,",
+    `  V extends ${prefix}ValidationOptions = ${prefix}ValidationOptions,`,
     `  M extends readonly ${prefix}RouteMiddleware[] = readonly ${prefix}RouteMiddleware[],`,
     "  E extends ErrorDefinitions = {},",
     "> = {",
@@ -147,7 +219,7 @@ const renderMethod = (
     "",
     `export function ${functionName}<`,
     "  const D extends readonly RouteDependency[] = [],",
-    "  const V extends ValidationOptions = {},",
+    `  const V extends ${prefix}ValidationOptions = {},`,
     `  const M extends readonly ${prefix}RouteMiddleware[] = [],`,
     "  const E extends ErrorDefinitions = {},",
     ">(",
@@ -196,7 +268,7 @@ const renderMethod = (
     ...common,
     "",
     '  if (typeof input === "function") {',
-    "    return defineRouteHandlers([input]);",
+    `    return defineRouteHandlers<${prefix}Path>([input]);`,
     "  }",
     "",
     "  const dependencies = input.deps ?? [];",
@@ -206,7 +278,8 @@ const renderMethod = (
     "      ? undefined",
     "      : createErrorContext(input.errors);",
     "",
-    `  const handler: ${prefix}RouteHandler = (c, next) => {`,
+
+    `  const handler: ${prefix}RouteHandler = async (c, next) => {`,
     ...(dependencyNames.length > 0
       ? [
           "    const dependencyContext =",
@@ -217,43 +290,38 @@ const renderMethod = (
         ]
       : []),
 
-    "    const valid =",
-    "      c.req.valid as unknown as",
-    "        (target: ValidationTarget) => unknown;",
-    "",
-    "    const validationInput =",
-    "      Object.create(null) as Record<string, unknown>;",
-    "",
-
-    ...(
-      ["json", "form", "query", "param", "header", "cookie"] as const
-    ).flatMap((target) => [
-      `    if (input.validation?.${target} !== undefined) {`,
-      `      validationInput.${target} = valid(${JSON.stringify(target)});`,
-      "    }",
-      "",
-    ]),
-    "    return input.handler({",
-    "      c,",
+    "    const response = await input.handler({",
+    "      c: c as unknown as",
+    `        ${prefix}RouteContext<${prefix}ValidationOptions>,`,
     "      next,",
-    "      ...validationInput,",
     ...(dependencyNames.length > 0 ? dependencyProperties : []),
     "      ...(errors !== undefined ? { errors } : {}),",
     "    });",
+    "",
+
+    "    if (input.validation?.response !== undefined) {",
+    "      return validateResponse(",
+    "        response as Response,",
+    "        input.validation.response,",
+    `        ${routeLabel},`,
+    "      );",
+    "    }",
+    "",
+    "    return response;",
     "  };",
     "",
     "  const handlers = [",
     `    ...((input.middleware ?? []) as readonly ${prefix}RouteHandler[]),`,
     ...(["json", "form", "query", "param", "header", "cookie"] as const).map(
       (target) =>
-        `    ...(input.validation?.${target} !== undefined ? [sValidator(${JSON.stringify(
+        `    ...(input.validation?.${target} !== undefined ? [validatorEngine(${JSON.stringify(
           target
         )}, input.validation.${target}) as ${prefix}RouteHandler] : []),`
     ),
     "    handler,",
     "  ] as const;",
     "",
-    "  return defineRouteHandlers(handlers, input.onError);",
+    `  return defineRouteHandlers<${prefix}Path>(handlers, input.onError);`,
     "}",
     "",
   ].join("\n");
@@ -263,45 +331,6 @@ const COMMON_TYPES = [
   "type RouteDependency = AnyDependencyReference;",
   "",
   "type ErrorDefinitions = Record<string, ErrorConstructor>;",
-  "",
-  "type StandardSchema = {",
-  '  readonly "~standard": {',
-  "    readonly validate: (...args: any[]) => any;",
-  "    readonly types?: {",
-  "      readonly input?: unknown;",
-  "    };",
-  "  };",
-  "};",
-  "",
-  "type StandardSchemaInput<Schema extends StandardSchema> =",
-  '  Schema["~standard"]["types"] extends {',
-  "    readonly input?: infer Input;",
-  "  }",
-  "    ? Input",
-  "    : unknown;",
-  "",
-  "type ValidationTarget =",
-  '  | "json"',
-  '  | "form"',
-  '  | "query"',
-  '  | "param"',
-  '  | "header"',
-  '  | "cookie";',
-  "",
-  "type ValidationOptions = Partial<",
-  "  Record<ValidationTarget, StandardSchema>",
-  ">;",
-  "",
-  "type ValidationEntry<",
-  "  Target extends ValidationTarget,",
-  "  Schema extends StandardSchema,",
-  "> = undefined extends StandardSchemaInput<Schema>",
-  "  ? {",
-  "      readonly [Key in Target]?: StandardSchemaInput<Schema>;",
-  "    }",
-  "  : {",
-  "      readonly [Key in Target]: StandardSchemaInput<Schema>;",
-  "    };",
   "",
   "type UnionToIntersection<Union> =",
   "  (Union extends unknown",
@@ -317,7 +346,8 @@ const COMMON_TYPES = [
   '  | "error"',
   '  | "errors"',
   '  | "onError"',
-  "  | ValidationTarget;",
+  '  | "response"',
+  "  | NoohValidationTarget;",
 ];
 
 export const generateRouterModule = (
@@ -334,6 +364,10 @@ export const generateRouterModule = (
 
   const dependencyModuleId = `${plan.outputRoot}/router/di.ts`;
 
+  const errorModuleId = `${plan.outputRoot}/error.ts`;
+
+  const configModuleId = model.config.source;
+
   const usesDependencies =
     mode === "runtime" &&
     routes.some((route) => {
@@ -342,16 +376,24 @@ export const generateRouterModule = (
       return !!dependencyModel?.roots.length;
     });
 
-  const usesErrors = mode === "runtime";
-
   const imports: string[] = [
-    `import type { Handler, MiddlewareHandler } from "hono";`,
+    "import type {",
+    "  Context,",
+    "  Handler,",
+    "  MiddlewareHandler,",
+    "  TypedResponse,",
+    `} from "hono";`,
     "import type {",
     "  AnyDependencyReference,",
     "  DependencyContext,",
     "  ErrorContext,",
     "  ErrorConstructor,",
     "  NoohErrorHandler,",
+    "  NoohRequestValidationTarget,",
+    "  NoohStandardSchema,",
+    "  NoohStandardSchemaInput,",
+    "  NoohStandardSchemaOutput,",
+    "  NoohValidationTarget,",
     "  ValidateDependencies,",
     '} from "@nooh-ts/nooh";',
     `import type { App } from ${JSON.stringify(
@@ -360,7 +402,15 @@ export const generateRouterModule = (
   ];
 
   if (mode === "runtime") {
-    imports.unshift(`import { sValidator } from "@hono/standard-validator";`);
+    imports.unshift(
+      `import { sValidator } from "@hono/standard-validator";`,
+      `import config from ${JSON.stringify(
+        relativeModuleSpecifier(moduleId, configModuleId)
+      )};`,
+      `import { validateResponse } from ${JSON.stringify(
+        relativeModuleSpecifier(moduleId, errorModuleId)
+      )};`
+    );
   }
 
   if (usesDependencies) {
@@ -375,7 +425,19 @@ export const generateRouterModule = (
 
   const prelude: string[] = ["", ...COMMON_TYPES];
 
-  if (usesErrors) {
+  if (mode === "runtime") {
+    prelude.push(
+      "",
+      "const validatorEngine = (",
+      "  config.validator?.engine ?? sValidator,",
+      ") as unknown as (",
+      "  target: NoohRequestValidationTarget,",
+      "  schema: NoohStandardSchema,",
+      ") => unknown;"
+    );
+  }
+
+  if (mode === "runtime") {
     prelude.push(
       "",
       "const createErrorContext = <",
@@ -398,11 +460,12 @@ export const generateRouterModule = (
       "};",
       "",
       "const defineRouteHandlers = <",
-      "  const T extends readonly Handler<App, any, any, any>[],",
+      "  const P extends string,",
+      "  const T extends readonly Handler<App, P, any, any>[],",
       ">(",
       "  handlers: T,",
-      "  onError?: NoohErrorHandler<App, string>,",
-      "): T & { readonly onError?: NoohErrorHandler<App, string> } => {",
+      "  onError?: NoohErrorHandler<App, P>,",
+      "): T & { readonly onError?: NoohErrorHandler<App, P> } => {",
       "  if (onError !== undefined) {",
       '    Object.defineProperty(handlers, "onError", {',
       "      configurable: false,",
@@ -413,7 +476,7 @@ export const generateRouterModule = (
       "  }",
       "",
       "  return handlers as T & {",
-      "    readonly onError?: NoohErrorHandler<App, string>;",
+      "    readonly onError?: NoohErrorHandler<App, P>;",
       "  };",
       "};"
     );
