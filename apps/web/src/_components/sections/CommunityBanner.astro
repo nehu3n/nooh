@@ -1,17 +1,36 @@
 ---
-const response = await fetch("https://api.github.com/repos/nehu3n/nooh", {
-  headers: {
-    Accept: "application/vnd.github+json",
-  },
+const repoRes = await fetch("https://api.github.com/repos/nehu3n/nooh", {
+  headers: { Accept: "application/vnd.github+json" },
 });
 
-if (!response.ok) {
-  throw new Error(`GitHub API returned ${response.status}`);
+if (!repoRes.ok) {
+  throw new Error(`GitHub API returned ${repoRes.status}`);
 }
 
-const repo = await response.json();
-
+const repo = await repoRes.json();
 const stars = repo.stargazers_count;
+
+const contribRes = await fetch(
+  "https://api.github.com/repos/nehu3n/nooh/contributors?per_page=1",
+  {
+    headers: { Accept: "application/vnd.github+json" },
+  }
+);
+
+let contributors = 0;
+
+if (contribRes.ok) {
+  const linkHeader = contribRes.headers.get("link");
+  if (linkHeader) {
+    const match = linkHeader.match(/page=(\d+)>; rel="last"/);
+    if (match) {
+      contributors = Number.parseInt(match[1] ?? "10", 10);
+    }
+  } else {
+    const data = await contribRes.json();
+    contributors = data.length;
+  }
+}
 ---
 
 <section class="w-full py-8">
@@ -78,7 +97,9 @@ const stars = repo.stargazers_count;
           <div class="text-[10px] font-mono text-gray-400 dark:text-gray-500">
             Contributors
           </div>
-          <div class="font-bold text-xs text-black dark:text-white">100+</div>
+          <div class="font-bold text-xs text-black dark:text-white">
+            {contributors}+ contributors
+          </div>
         </div>
       </div>
     </div>
