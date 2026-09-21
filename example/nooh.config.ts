@@ -7,5 +7,6 @@ export interface App {
 }
 
 export default config<App>({
+  dependencies: "src/deps",
   routes: "src/routes",
 });

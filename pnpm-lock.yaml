@@ -96,6 +96,9 @@ importers:
       '@nooh-ts/compiler':
         specifier: workspace:*
         version: link:../compiler
+      tsx:
+        specifier: 'catalog:'
+        version: 4.23.13
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

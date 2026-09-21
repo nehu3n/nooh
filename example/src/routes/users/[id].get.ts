@@ -1,4 +1,4 @@
-import { db } from "@deps/db";
+import db from "@deps/db";
 import { get } from "@router/users/[id]";
 
 export default get({

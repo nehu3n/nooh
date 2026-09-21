@@ -1,8 +1,14 @@
 import { container } from "@nooh-ts/nooh";
 
-export const db = container({
+export default container({
   posts: () => [
-    { id: "1", title: "Post 1" },
-    { id: "2", title: "Post 2" },
+    {
+      id: "1",
+      title: "Post 1",
+    },
+    {
+      id: "2",
+      title: "Post 2",
+    },
   ],
 });
