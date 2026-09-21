@@ -1,11 +1,13 @@
 import type { Env } from "hono";
 
 import type { NoohErrorHandler } from "@/errors";
+import type { NoohValidatorOptions } from "@/validation";
 
 export interface NoohConfigOptions<Environment extends Env = Env> {
   readonly dependencies?: string;
   readonly onError?: NoohErrorHandler<Environment>;
   readonly routes?: string;
+  readonly validator?: NoohValidatorOptions;
 }
 
 export interface NoohConfig<Environment extends Env = Env>
