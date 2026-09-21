@@ -1,7 +1,4 @@
-import {
-  dependencyClosure,
-  loadDependencyGraph,
-} from "@/pipeline/dependencies";
+import { dependencyClosure } from "@/pipeline/dependencies";
 
 import type {
   CompilationIntrospection,
@@ -44,7 +41,7 @@ export const introspectRoute = async (
   loader: IntrospectionInput["loader"]
 ): Promise<{
   readonly diagnostics: readonly Diagnostic[];
-  readonly metadata?: RouteMetadata;
+  readonly metadata?: RouteMetadata | undefined;
 }> => {
   let exported: unknown;
 
@@ -77,8 +74,8 @@ export const introspectRoute = async (
           message: [
             "The route did not expose Nooh route metadata.",
             "",
-            "Make sure the route is evaluated against the generated",
-            "Nooh router helpers.",
+            "Make sure the route is evaluated against",
+            "the generated Nooh introspection router.",
           ].join("\n"),
           severity: "error",
         },
@@ -108,6 +105,19 @@ const unknownDependencyDiagnostic = (
   severity: "error",
 });
 
+const duplicateRouteDependencyNameDiagnostic = (
+  route: RouteModel,
+  name: string
+): Diagnostic => ({
+  code: "NOOH035",
+  file: route.source,
+  message: [
+    `Route "${route.id}" injects multiple dependencies`,
+    `with the same name "${name}".`,
+  ].join(" "),
+  severity: "error",
+});
+
 export const introspectCompilation = async (
   input: IntrospectionInput
 ): Promise<IntrospectionResult> => {
@@ -125,14 +135,9 @@ export const introspectCompilation = async (
     };
   }
 
+  const graph = input.compilation.model.dependencies;
+
   const diagnostics: Diagnostic[] = [];
-
-  const dependencyResult = await loadDependencyGraph(
-    input.dependencySources,
-    input.loader
-  );
-
-  diagnostics.push(...dependencyResult.diagnostics);
 
   const routeDependencies = new Map<
     string,
@@ -153,6 +158,7 @@ export const introspectCompilation = async (
     }
 
     const roots: string[] = [];
+    const names = new Set<string>();
 
     for (const dependency of result.metadata.dependencies) {
       if (typeof dependency !== "object" || dependency === null) {
@@ -161,23 +167,47 @@ export const introspectCompilation = async (
         continue;
       }
 
-      const id = dependencyResult.graph.references.get(dependency);
+      const id = graph.references.get(dependency);
 
       if (!id) {
         diagnostics.push(unknownDependencyDiagnostic(route, dependency));
+
         continue;
       }
 
-      if (!roots.includes(id)) {
-        roots.push(id);
+      const node = graph.nodes.get(id);
+
+      if (!node) {
+        diagnostics.push({
+          code: "NOOH034",
+          file: route.source,
+          message: [
+            `Route "${route.id}" references dependency`,
+            `"${id}" that is missing from the dependency graph.`,
+          ].join(" "),
+          severity: "error",
+        });
+
+        continue;
       }
+
+      const { name } = node.declaration;
+
+      if (names.has(name)) {
+        diagnostics.push(duplicateRouteDependencyNameDiagnostic(route, name));
+
+        continue;
+      }
+
+      names.add(name);
+      roots.push(id);
     }
 
-    const closure = dependencyClosure(dependencyResult.graph, roots);
+    const closure = dependencyClosure(graph, roots);
 
     routeDependencies.set(route.id, {
       closure,
-      roots: [...roots].sort(),
+      roots,
     });
   }
 
@@ -188,8 +218,8 @@ export const introspectCompilation = async (
     };
   }
 
-  const result: CompilationIntrospection = {
-    dependencies: dependencyResult.graph,
+  const introspection: CompilationIntrospection = {
+    dependencies: graph,
 
     routeDependencies: [...routeDependencies.entries()]
       .map(([routeId, value]) => ({
@@ -202,6 +232,6 @@ export const introspectCompilation = async (
 
   return {
     diagnostics,
-    introspection: result,
+    introspection,
   };
 };

@@ -1,9 +1,9 @@
 import { generate, generateRouteIntrospection } from "@/generate";
-
 import { introspectCompilation } from "@/introspect";
 
 import { analyze } from "@/pipeline/analyze";
 import { loadConfig } from "@/pipeline/config";
+import { loadDependencyGraph } from "@/pipeline/dependencies";
 import { discover } from "@/pipeline/discover";
 import { parse } from "@/pipeline/parse";
 import { plan } from "@/pipeline/plan";
@@ -16,7 +16,7 @@ import type {
   NoohCompiler,
 } from "@/types";
 
-const emptyDependencies = {
+const emptyDependencyGraph = {
   nodes: new Map(),
   order: [],
   references: new Map(),
@@ -39,9 +39,7 @@ export const createCompiler = (): NoohCompiler => ({
             source: input.config,
             value: {},
           },
-
-          dependencies: emptyDependencies,
-
+          dependencies: emptyDependencyGraph,
           groups: [],
           routeDependencies: [],
           routes: [],
@@ -54,9 +52,22 @@ export const createCompiler = (): NoohCompiler => ({
     const discovered = discover(input.sources, configResult.config);
     const parsed = parse(discovered);
 
-    const analyzed = analyze(parsed, configResult.config, emptyDependencies);
+    const dependencyResult = await loadDependencyGraph(
+      discovered.dependencies,
+      input.loader
+    );
 
-    const diagnostics = [...configResult.diagnostics, ...analyzed.diagnostics];
+    const analyzed = analyze(
+      parsed,
+      configResult.config,
+      dependencyResult.graph
+    );
+
+    const diagnostics = [
+      ...configResult.diagnostics,
+      ...dependencyResult.diagnostics,
+      ...analyzed.diagnostics,
+    ];
 
     const hasErrors = diagnostics.some(
       (diagnostic) => diagnostic.severity === "error"
@@ -73,7 +84,7 @@ export const createCompiler = (): NoohCompiler => ({
 
     const compilationPlan = plan(analyzed.model, input.options?.outputRoot);
 
-    const output = generate(compilationPlan, analyzed.model);
+    const output = generateRouteIntrospection(compilationPlan, analyzed.model);
 
     return {
       diagnostics,

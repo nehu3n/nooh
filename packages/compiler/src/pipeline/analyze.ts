@@ -14,6 +14,7 @@ import { ensureLeadingSlash, normalizePath } from "@/utils/path";
 const emptyDependencyGraph = (): DependencyGraph => ({
   nodes: new Map(),
   order: [],
+  references: new Map(),
 });
 
 const segmentToHono = (segment: RouteSegment): string => {
@@ -287,6 +288,7 @@ export const analyze = (
       config,
       dependencies,
       groups,
+      routeDependencies: [],
       routes: routeModels,
     },
   };

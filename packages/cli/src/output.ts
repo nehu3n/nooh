@@ -45,6 +45,21 @@ const readManifest = async (root: string): Promise<OutputManifest> => {
   }
 };
 
+export const writeModules = async (
+  root: string,
+  output: GeneratedOutput
+): Promise<void> => {
+  for (const module of output.modules) {
+    const path = resolve(root, module.id);
+
+    await mkdir(dirname(path), {
+      recursive: true,
+    });
+
+    await writeFile(path, module.code);
+  }
+};
+
 export const writeOutput = async (
   root: string,
   output: GeneratedOutput
@@ -62,18 +77,14 @@ export const writeOutput = async (
   let changed = 0;
   let removed = 0;
 
-  for (const module of output.modules) {
-    const path = resolve(root, module.id);
-    const existed = previousModules.has(module.id);
+  await writeModules(root, output);
 
-    if (existed) {
+  for (const module of output.modules) {
+    if (previousModules.has(module.id)) {
       changed += 1;
     } else {
       added += 1;
     }
-
-    await mkdir(dirname(path), { recursive: true });
-    await writeFile(path, module.code);
   }
 
   for (const module of previous.modules) {

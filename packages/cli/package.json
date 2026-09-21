@@ -39,7 +39,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@nooh-ts/compiler": "workspace:*"
+    "@nooh-ts/compiler": "workspace:*",
+    "tsx": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
