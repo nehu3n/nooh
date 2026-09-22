@@ -1,36 +1,8 @@
 ---
-const repoRes = await fetch("https://api.github.com/repos/nehu3n/nooh", {
-  headers: { Accept: "application/vnd.github+json" },
-});
+import githubStats from "@data/github-stats.json";
 
-if (!repoRes.ok) {
-  throw new Error(`GitHub API returned ${repoRes.status}`);
-}
-
-const repo = await repoRes.json();
-const stars = repo.stargazers_count;
-
-const contribRes = await fetch(
-  "https://api.github.com/repos/nehu3n/nooh/contributors?per_page=1",
-  {
-    headers: { Accept: "application/vnd.github+json" },
-  }
-);
-
-let contributors = 0;
-
-if (contribRes.ok) {
-  const linkHeader = contribRes.headers.get("link");
-  if (linkHeader) {
-    const match = linkHeader.match(/page=(\d+)>; rel="last"/);
-    if (match) {
-      contributors = Number.parseInt(match[1] ?? "10", 10);
-    }
-  } else {
-    const data = await contribRes.json();
-    contributors = data.length;
-  }
-}
+const stars = `${githubStats.stars}+`;
+const contributors = `${githubStats.contributors}+`;
 ---
 
 <section class="w-full py-8">
@@ -38,7 +10,6 @@ if (contribRes.ok) {
     <div
       class="bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-2xs"
     >
-      <!-- Left info -->
       <div class="flex items-start sm:items-center gap-4">
         <img
           alt="Nooh logo"
@@ -46,13 +17,15 @@ if (contribRes.ok) {
           height="28"
           src="/icon.webp"
           width="28"
-        >
+        />
+
         <div>
           <h3
             class="font-bold text-base sm:text-lg text-black dark:text-white tracking-tight"
           >
             Open source and community driven.
           </h3>
+
           <p
             class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 font-sans"
           >
@@ -61,7 +34,6 @@ if (contribRes.ok) {
         </div>
       </div>
 
-      <!-- Right stats & button -->
       <div class="flex items-center gap-6 flex-wrap sm:flex-nowrap">
         <a
           class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f0f10] dark:bg-white text-white dark:text-black text-xs font-semibold rounded hover:bg-black dark:hover:bg-gray-200 transition-all shadow-xs"
@@ -70,6 +42,7 @@ if (contribRes.ok) {
           target="_blank"
         >
           <span>View on GitHub</span>
+
           <svg
             aria-hidden="true"
             class="w-3.5 h-3.5 stroke-current"
@@ -88,8 +61,9 @@ if (contribRes.ok) {
           <div class="text-[10px] font-mono text-gray-400 dark:text-gray-500">
             GitHub
           </div>
+
           <div class="font-bold text-xs text-black dark:text-white">
-            {stars}+ ★
+            {stars} ★
           </div>
         </div>
 
@@ -97,8 +71,9 @@ if (contribRes.ok) {
           <div class="text-[10px] font-mono text-gray-400 dark:text-gray-500">
             Contributors
           </div>
+
           <div class="font-bold text-xs text-black dark:text-white">
-            {contributors}+ contributors
+            {contributors} contributors
           </div>
         </div>
       </div>

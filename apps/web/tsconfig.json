@@ -9,7 +9,8 @@
       "@components/*": ["./src/_components/*"],
       "@sections/*": ["./src/_components/sections/*"],
       "@layouts/*": ["./src/_layouts/*"],
-      "@styles/*": ["./styles/*"]
+      "@styles/*": ["./styles/*"],
+      "@data/*": ["./src/data/*"]
     }
   },
   "include": ["blume.config.ts", "docs/**/*.ts", "docs/**/*.tsx", "src/**/*"]
