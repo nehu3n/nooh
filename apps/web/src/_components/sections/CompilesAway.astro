@@ -61,7 +61,6 @@ const generatedHonoHtml = await highlightCode(generatedHonoCode, "ts", {
 
 <section class="w-full py-16">
   <div class="max-w-6xl mx-auto px-6">
-
     <!-- Header info -->
     <div class="mb-8">
       <span
@@ -79,15 +78,14 @@ const generatedHonoHtml = await highlightCode(generatedHonoCode, "ts", {
       <p
         class="text-gray-600 dark:text-gray-400 text-xs sm:text-sm leading-relaxed max-w-lg mt-2 font-sans"
       >
-        Nooh uses your routes, dependencies, middleware and errors as compile-time
-        composition. The generated application is ordinary Hono code with no
-        Nooh runtime.
+        Nooh uses your routes, dependencies, middleware and errors as
+        compile-time composition. The generated application is ordinary Hono
+        code with no Nooh runtime.
       </p>
     </div>
 
     <!-- Side by Side Code comparison -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-
       <!-- Left: WHAT YOU WRITE -->
       <div
         class="lg:col-span-5 bg-white dark:bg-[#141418] border border-gray-200/90 dark:border-white/10 rounded-lg overflow-hidden shadow-2xs"
@@ -123,7 +121,7 @@ const generatedHonoHtml = await highlightCode(generatedHonoCode, "ts", {
           height="28"
           src="/icon.webp"
           width="28"
-        />
+        >
 
         <span
           class="font-bold text-xs text-black dark:text-white tracking-wider font-sans"
@@ -161,9 +159,7 @@ const generatedHonoHtml = await highlightCode(generatedHonoCode, "ts", {
             GENERATED HONO
           </span>
 
-          <span class="text-gray-400 dark:text-gray-500">
-            .nooh/*
-          </span>
+          <span class="text-gray-400 dark:text-gray-500"> .nooh/* </span>
         </div>
 
         <div
@@ -172,7 +168,6 @@ const generatedHonoHtml = await highlightCode(generatedHonoCode, "ts", {
           <Fragment set:html={generatedHonoHtml} />
         </div>
       </div>
-
     </div>
 
     <!-- Generated modules hint -->
@@ -185,6 +180,5 @@ const generatedHonoHtml = await highlightCode(generatedHonoCode, "ts", {
       <span>→</span>
       <span>.nooh/app.ts</span>
     </div>
-
   </div>
 </section>

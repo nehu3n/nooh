@@ -1,0 +1,60 @@
+---
+title: CLI Reference
+description: Detailed reference for the @nooh-ts/cli command-line utility.
+---
+
+## Usage
+
+```bash
+nooh <command> [options]
+```
+
+## Global Flags
+
+| Flag | Shorthand | Description |
+| :--- | :--- | :--- |
+| `--config <path>` | `-c <path>` | Path to custom Nooh config file. |
+| `--version` | `-v` | Display the installed Nooh CLI version. |
+| `--help` | `-h` | Display usage and help information. |
+
+## Commands
+
+### `build`
+
+Compiles the project, validates dependencies and route trees, and outputs generated router code to `.nooh/`.
+
+```bash
+nooh build [-c <path>]
+```
+
+- **Exit code `0`**: Build succeeded without diagnostic errors.
+- **Exit code `1`**: Build failed due to diagnostic errors or config issues.
+
+### `watch`
+
+Monitors filesystem changes in the `routes` directory and incrementally recompiles router modules.
+
+```bash
+nooh watch [-c <path>]
+```
+
+### `dev`
+
+Starts the watch compiler and concurrently runs your backend runtime server via a child process.
+
+```bash
+nooh dev [-c <path>] -- <command> [args...]
+```
+
+#### Examples
+
+```bash
+# Run with tsx watch
+nooh dev -- pnpm exec tsx --watch src/index.ts
+
+# Run with custom config and Bun
+nooh dev -c custom.config.ts -- bun --watch src/index.ts
+
+# Run with Wrangler
+nooh dev -- wrangler dev
+```

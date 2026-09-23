@@ -1,0 +1,82 @@
+---
+title: Schemas & Standard Schema
+description: Using Standard Schema compliant libraries like Zod, Valibot, and ArkType in Nooh.
+---
+
+Nooh adopts the [Standard Schema](https://standardschema.dev) specification (`~standard`). This means you are not locked into any single validation library — any schema library implementing Standard Schema works out of the box with zero glue code.
+
+## Supported Libraries
+
+<CardGroup cols={3}>
+  <Card title="Zod" icon="box">
+    The standard in TypeScript schema validation with rich ecosystem support.
+  </Card>
+  <Card title="Valibot" icon="feather">
+    Modular, tree-shakeable schema library with a tiny bundle footprint.
+  </Card>
+  <Card title="ArkType" icon="zap">
+    Blazing fast, 1:1 TypeScript syntax string-based validator.
+  </Card>
+</CardGroup>
+
+## Defining Schemas
+
+Here is how you define schemas using popular libraries:
+
+<CodeGroup>
+
+```ts Zod
+import { z } from "zod";
+
+export const CreateUserSchema = z.object({
+  name: z.string().min(2).max(50),
+  email: z.string().email(),
+  role: z.enum(["admin", "member"]).default("member"),
+});
+
+export type CreateUserInput = z.infer<typeof CreateUserSchema>;
+```
+
+```ts Valibot
+import * as v from "valibot";
+
+export const CreateUserSchema = v.object({
+  name: v.pipe(v.string(), v.minLength(2), v.maxLength(50)),
+  email: v.pipe(v.string(), v.email()),
+  role: v.optional(v.picklist(["admin", "member"]), "member"),
+});
+
+export type CreateUserInput = v.InferOutput<typeof CreateUserSchema>;
+```
+
+```ts ArkType
+import { type } from "arktype";
+
+export const CreateUserSchema = type({
+  name: "2 <= string <= 50",
+  email: "email",
+  "role?": "'admin' | 'member'",
+});
+
+export type CreateUserInput = typeof CreateUserSchema.infer;
+```
+
+</CodeGroup>
+
+## Standard Schema Contract
+
+Under the hood, Nooh inspects the `~standard` property on provided schema objects:
+
+```ts
+export interface NoohStandardSchema {
+  readonly "~standard": {
+    readonly validate: (value: never, ...args: never[]) => unknown;
+    readonly types?: {
+      readonly input?: unknown;
+      readonly output?: unknown;
+    };
+  };
+}
+```
+
+This guarantees full compile-time type inference for your handler inputs (`c.req.valid(...)`) and outputs without runtime adapter overhead.

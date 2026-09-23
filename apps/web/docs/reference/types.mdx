@@ -1,0 +1,128 @@
+---
+title: Types Reference
+description: Complete catalog of TypeScript interfaces, types, and generics exported by @nooh-ts/nooh.
+---
+
+Summary of all core TypeScript types exported from `@nooh-ts/nooh`.
+
+## Configuration Types
+
+```ts
+import type {
+  ConfigEnvironment,
+  NoohConfig,
+  NoohConfigOptions,
+  NoohGroup,
+  NoohGroupOptions,
+} from "@nooh-ts/nooh";
+```
+
+### `NoohConfigOptions<Environment>`
+```ts
+export interface NoohConfigOptions<Environment extends Env = Env> {
+  readonly dependencies?: string;
+  readonly onError?: NoohErrorHandler<Environment>;
+  readonly routes?: string;
+  readonly validator?: NoohValidatorOptions;
+}
+```
+
+### `NoohGroupOptions<Environment, Middleware>`
+```ts
+export interface NoohGroupOptions<
+  Environment extends Env = Env,
+  Middleware = unknown,
+> {
+  readonly middleware?: readonly Middleware[];
+  readonly onError?: NoohErrorHandler<Environment>;
+}
+```
+
+---
+
+## Dependency Injection Types
+
+```ts
+import type {
+  AnyDependencyReference,
+  Container,
+  DependencyContext,
+  DependencyDefinition,
+  DependencyEntry,
+  DependencyName,
+  DependencyReference,
+  DependencyResolutionContext,
+  DependencyScope,
+  DependencyValue,
+  DuplicateDependency,
+  InvalidDependencyScope,
+  ReservedDependencyName,
+  ValidateDependencies,
+  ValidateDependencyScopes,
+} from "@nooh-ts/nooh";
+```
+
+### `DependencyScope`
+```ts
+export type DependencyScope = "singleton" | "request" | "transient" | "value";
+```
+
+### `DependencyResolutionContext`
+```ts
+export interface DependencyResolutionContext {
+  readonly cache: Map<object, unknown>;
+  readonly resolving: Set<object>;
+  readonly stack: string[];
+}
+```
+
+---
+
+## Error Handling Types
+
+```ts
+import type {
+  ErrorConstructor,
+  ErrorContext,
+  ErrorFactory,
+  NoohErrorHandler,
+} from "@nooh-ts/nooh";
+```
+
+### `NoohErrorHandler<Environment, Path>`
+```ts
+export type NoohErrorHandler<
+  Environment extends Env = Env,
+  Path extends string = string,
+> = (
+  error: Error | HTTPResponseError,
+  c: Context<Environment, Path>
+) => HandlerResponse<unknown>;
+```
+
+---
+
+## Validation Types
+
+```ts
+import type {
+  NoohRequestValidationTarget,
+  NoohStandardSchema,
+  NoohStandardSchemaInput,
+  NoohStandardSchemaOutput,
+  NoohValidationTarget,
+  NoohValidatorEngine,
+  NoohValidatorOptions,
+} from "@nooh-ts/nooh";
+```
+
+### `NoohRequestValidationTarget`
+```ts
+export type NoohRequestValidationTarget =
+  | "json"
+  | "form"
+  | "query"
+  | "param"
+  | "header"
+  | "cookie";
+```

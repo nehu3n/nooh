@@ -1,0 +1,95 @@
+---
+title: Installation
+description: Add Nooh to an existing Hono project or scaffold a brand-new one from the official template.
+---
+
+## Requirements
+
+- **Node.js** 18 or newer (any runtime that supports TypeScript — Bun, Deno, and Cloudflare Workers are all supported through Hono's adapters).
+- An existing project that uses **Hono**, or no project at all — the template will scaffold everything for you.
+
+## Template (recommended)
+
+The fastest way to start is the official template. It creates a complete project with `nooh.config.ts`, a sample route, a dependency container, and a Hono entry point already wired together.
+
+<Tabs>
+  <Tab title="pnpm">
+    ```bash
+    pnpm create @nooh-ts/template
+    ```
+  </Tab>
+  <Tab title="npm">
+    ```bash
+    npm create @nooh-ts/template
+    ```
+  </Tab>
+  <Tab title="bun">
+    ```bash
+    bun create @nooh-ts/template
+    ```
+  </Tab>
+</Tabs>
+
+Follow the interactive setup and you're ready to start.
+
+## Manual installation
+
+If you already have a Hono project, install the runtime package and the CLI separately:
+
+<Tabs>
+  <Tab title="pnpm">
+    ```bash
+    pnpm add @nooh-ts/nooh hono @hono/standard-validator
+    pnpm add -D @nooh-ts/cli
+    ```
+  </Tab>
+  <Tab title="npm">
+    ```bash
+    npm install @nooh-ts/nooh hono @hono/standard-validator
+    npm install -D @nooh-ts/cli
+    ```
+  </Tab>
+  <Tab title="bun">
+    ```bash
+    bun add @nooh-ts/nooh hono @hono/standard-validator
+    bun add -D @nooh-ts/cli
+    ```
+  </Tab>
+</Tabs>
+
+:::note
+`@hono/standard-validator` is the default validation engine. You can swap it for any Standard Schema-compatible adapter later via the `validator.engine` option in `nooh.config.ts`.
+:::
+
+## Create the config file
+
+Create `nooh.config.ts` at the root of your project:
+
+```ts
+// nooh.config.ts
+import { config } from "@nooh-ts/nooh";
+
+export default config({
+  routes: "src/routes",
+  dependencies: "src/deps",
+});
+```
+
+This tells Nooh where to look for routes and dependency containers. Both paths are relative to the config file.
+
+## Verify the setup
+
+Run the build once to make sure everything is wired correctly:
+
+```bash
+npx nooh build
+```
+
+If successful, a `.nooh/` directory appears at your project root containing the generated Hono application. You can now import the app from your entry point:
+
+```ts
+// src/index.ts
+import app from "../.nooh/app";
+
+export default app;
+```

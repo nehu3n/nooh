@@ -1,0 +1,100 @@
+---
+title: Route Generation
+description: How Nooh compiles file-based routes into typed Hono modules and native route handlers.
+---
+
+When you run `nooh build`, `nooh dev`, or use the Nooh bundler plugin, the Nooh compiler inspects your routes directory and generates fully typed route modules inside `.nooh/`.
+
+## The `.nooh` Directory
+
+The compiler produces a mirror of your routes structure along with helper artifacts:
+
+<Tree>
+  <Tree.Folder name=".nooh" defaultOpen>
+    <Tree.File name="app.ts" />
+    <Tree.Folder name="router" defaultOpen>
+      <Tree.File name="index.ts" />
+      <Tree.File name="middleware.ts" />
+      <Tree.Folder name="users">
+        <Tree.File name="index.ts" />
+        <Tree.File name="[id].ts" />
+      </Tree.Folder>
+    </Tree.Folder>
+  </Tree.Folder>
+</Tree>
+
+### What is generated?
+
+1. **`app.ts`**: The main entry point creating the root `Hono` instance, registering all global middleware, mounting sub-routers, and exporting the final application.
+2. **`router/middleware.ts`**: Helper wrappers for defining typed middlewares matching your global environment.
+3. **`router/**/*.ts`**: Per-route helper modules exporting method functions (such as `get`, `post`, `put`, `del`, `patch`, `options`, `head`, `all`).
+
+## The `@router/*` Alias
+
+Nooh uses a path alias configured in your `tsconfig.json` so you can cleanly import route helpers from anywhere without relative clutter:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"],
+      "@router/*": ["./.nooh/router/*"]
+    }
+  }
+}
+```
+
+When authoring `src/routes/users/[id].get.ts`, you import from `@router/users/[id]`:
+
+```ts src/routes/users/[id].get.ts
+import { get } from "@router/users/[id]";
+
+export default get((c) => {
+  const { id } = c.req.param();
+  return c.json({ id });
+});
+```
+
+## Anatomy of Generated Route Modules
+
+Each generated file in `.nooh/router/` provides method builder functions tailored specifically for that route.
+
+### Type Signature & Overloads
+
+Generated method functions support multiple call styles:
+
+```ts
+// 1. Plain handler
+export default get((c) => c.text("Hello"));
+
+// 2. Options object with validation, dependencies, or route-level middleware
+export default get({
+  schema: {
+    param: userParamSchema,
+  },
+  deps: [userService],
+  handler: (c) => {
+    const { id } = c.req.valid("param");
+    const user = c.deps.userService.findById(id);
+    return c.json(user);
+  },
+});
+```
+
+### Route Metadata
+
+The generated route handler embeds internal metadata (`Symbol.for("nooh.route")`) used by the Nooh compiler during the introspection and diffing phases:
+
+```ts
+const NOOH_ROUTE_METADATA = Symbol.for("nooh.route");
+```
+
+This allows the compiler to inspect declared dependencies, validation schemas, and error boundaries during compilation without having to execute runtime code.
+
+## Incremental Compilation & Caching
+
+The compiler performs dependency graph analysis and diffing to keep your development workflow instant:
+
+- **Only changed routes recompile**: If you edit a single file in `routes/`, only that route's helper module is regenerated.
+- **Strict type safety**: If you change a route parameter from `[id]` to `[slug]`, TypeScript immediately reports errors where `c.req.param("id")` is accessed.
+- **Zero runtime overhead**: The generated code compiles down to vanilla Hono handlers. No reflection, runtime filesystem scanning, or regex parsing takes place at request time.

@@ -1,0 +1,79 @@
+---
+title: Errors
+description: Defining custom domain errors, error hierarchy, and type-safe error propagation.
+---
+
+Nooh promotes standard JavaScript and TypeScript classes for domain errors. Custom errors help you distinguish expected business rule failures from unexpected infrastructure crashes.
+
+## Creating Custom Errors
+
+Extend JavaScript's built-in `Error` class to define application-specific errors:
+
+```ts src/errors/user.ts
+export class UserNotFoundError extends Error {
+  readonly status = 404;
+  readonly code = "USER_NOT_FOUND";
+
+  constructor(public readonly userId: string) {
+    super(`User with ID "${userId}" was not found.`);
+    this.name = "UserNotFoundError";
+  }
+}
+
+export class DuplicateEmailError extends Error {
+  readonly status = 409;
+  readonly code = "DUPLICATE_EMAIL";
+
+  constructor(public readonly email: string) {
+    super(`Email "${email}" is already registered.`);
+    this.name = "DuplicateEmailError";
+  }
+}
+```
+
+## Declaring and Throwing Errors in Handlers
+
+You can declare domain errors in your route endpoint using the `errors` option. Nooh generates type-safe error factory wrappers and passes them to your handler in the `errors` property of the input object:
+
+```ts src/routes/users/[id].get.ts
+import { get } from "@router/users/[id]";
+import { services } from "@/dependencies";
+import { UserNotFoundError } from "@/errors/user";
+
+export default get({
+  deps: [services.userService],
+  errors: {
+    UserNotFound: UserNotFoundError,
+  },
+  handler: async ({ c, userService, errors }) => {
+    const { id } = c.req.param();
+    const user = await userService.findById(id);
+
+    if (!user) {
+      // errors.UserNotFound is an ErrorFactory typed to instantiate UserNotFoundError
+      throw errors.UserNotFound(id);
+    }
+
+    return c.json(user);
+  },
+});
+```
+
+When thrown, the error bubbles up to the nearest error handler (endpoint `onError`, route group, or global `onError`), where it can be formatted into a consistent JSON response.
+
+## Error Context & Factories
+
+Under the hood, Nooh uses `ErrorConstructor`, `ErrorFactory`, and `ErrorContext` types to wrap error constructors into type-safe factory functions:
+
+```ts
+import type { ErrorConstructor, ErrorFactory, ErrorContext } from "@nooh-ts/nooh";
+
+export type AppErrors = {
+  UserNotFound: typeof UserNotFoundError;
+  DuplicateEmail: typeof DuplicateEmailError;
+};
+
+// ErrorContext<AppErrors> provides typed factory helpers:
+// errors.UserNotFound(userId: string) => UserNotFoundError
+```
+

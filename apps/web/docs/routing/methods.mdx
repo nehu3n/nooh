@@ -1,0 +1,92 @@
+---
+title: Methods
+description: The HTTP methods Nooh supports and how to express them in file names.
+---
+
+Nooh supports all major HTTP methods. The method is the part of the filename that comes after the last dot before `.ts`.
+
+## Supported methods
+
+<Columns cols={2}>
+  <Column>
+
+| Suffix | HTTP Method |
+|--------|-------------|
+| `.get.ts` | `GET` |
+| `.post.ts` | `POST` |
+| `.put.ts` | `PUT` |
+| `.patch.ts` | `PATCH` |
+
+  </Column>
+  <Column>
+
+| Suffix | HTTP Method |
+|--------|-------------|
+| `.delete.ts` | `DELETE` |
+| `.options.ts` | `OPTIONS` |
+| `.head.ts` | `HEAD` |
+| `.all.ts` | All methods |
+
+  </Column>
+</Columns>
+
+## One file, one method
+
+Each file defines exactly one method on its path. Multiple methods on the same URL are separate files:
+
+<FileTree>
+
+- routes/
+  - users/
+    - [id].get.ts
+    - [id].patch.ts
+    - [id].delete.ts
+
+</FileTree>
+
+This produces:
+- `GET /users/:id`
+- `PATCH /users/:id`
+- `DELETE /users/:id`
+
+Each file has its own handler, its own middleware, its own deps, and its own generated factory. There is no sharing between them unless you import a shared module explicitly.
+
+## The `all` method
+
+`.all.ts` matches every HTTP method that no other file handles for that path. Use it for catch-all handlers, CORS preflight responses, or fallback logic:
+
+```ts
+// src/routes/api/[...].all.ts
+import { all } from "@router/api/[...]";
+
+export default all((c) =>
+  c.json({ error: "Not found" }, 404)
+);
+```
+
+In Hono, `app.all()` is the underlying call, so the same Hono behavior applies.
+
+## Generated factory names
+
+The generated factory function name matches the method. For `DELETE`, Hono uses `del` internally (because `delete` is a reserved word in JavaScript), and Nooh follows the same convention:
+
+| Method | Factory |
+|--------|---------|
+| `get` | `get` |
+| `post` | `post` |
+| `put` | `put` |
+| `patch` | `patch` |
+| `delete` | `del` |
+| `options` | `options` |
+| `head` | `head` |
+| `all` | `all` |
+
+```ts
+// src/routes/users/[id].delete.ts
+import { del } from "@router/users/[id]";
+
+export default del((c) => {
+  const id = c.req.param("id");
+  return c.json({ deleted: id });
+});
+```

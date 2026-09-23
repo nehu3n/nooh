@@ -1,0 +1,76 @@
+---
+title: Request Validation
+description: Validating JSON body, query parameters, route parameters, headers, and cookies.
+---
+
+Nooh allows you to validate all parts of an incoming HTTP request by declaring schemas under the `validation` property in your route definition.
+
+## Validation Targets
+
+Nooh supports six request validation targets:
+
+| Target | Description | Example Schema Source |
+| :--- | :--- | :--- |
+| `json` | Parsed JSON request body | `z.object({ name: z.string() })` |
+| `form` | Form URL-encoded / multipart form body | `z.object({ avatar: z.instanceof(File) })` |
+| `query` | URL query parameters | `z.object({ page: z.coerce.number() })` |
+| `param` | URL route parameters | `z.object({ id: z.string().uuid() })` |
+| `header` | HTTP headers | `z.object({ authorization: z.string() })` |
+| `cookie` | Request cookies | `z.object({ sessionId: z.string() })` |
+
+## Example: Validating Body and Query
+
+```ts src/routes/users/index.post.ts
+import { post } from "@router/users/index";
+import { z } from "zod";
+
+const BodySchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+});
+
+const QuerySchema = z.object({
+  notify: z.enum(["true", "false"]).optional(),
+});
+
+export default post({
+  validation: {
+    json: BodySchema,
+    query: QuerySchema,
+  },
+  handler: async ({ c }) => {
+    // 100% Type-Safe inputs inferred from schemas
+    const { name, email } = c.req.valid("json");
+    const { notify } = c.req.valid("query");
+
+    return c.json({ created: true, name, email, notified: notify === "true" }, 201);
+  },
+});
+```
+
+## Example: Validating Route Parameters
+
+When using dynamic routes (e.g. `src/routes/items/[id].get.ts`), you can validate and coerce parameters:
+
+```ts src/routes/items/[id].get.ts
+import { get } from "@router/items/[id]";
+import { z } from "zod";
+
+const ParamSchema = z.object({
+  id: z.string().regex(/^\d+$/, "ID must be numeric").transform(Number),
+});
+
+export default get({
+  validation: {
+    param: ParamSchema,
+  },
+  handler: ({ c }) => {
+    const { id } = c.req.valid("param"); // id is typed as number!
+    return c.json({ itemId: id });
+  },
+});
+```
+
+## Automatic Validation Errors
+
+If a request fails validation, Nooh returns an automatic `400 Bad Request` or `422 Unprocessable Entity` response detailing the invalid fields before your handler executes.

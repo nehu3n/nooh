@@ -1,0 +1,71 @@
+---
+title: Generated API Reference
+description: Specification of all generated code, helper functions, and modules in .nooh.
+---
+
+When compiled, Nooh outputs a standalone directory of TypeScript modules under `.nooh/`.
+
+## `.nooh/app.ts`
+
+The root application module. It initializes the Hono application instance, mounts all route handlers and sub-routers, attaches global middleware and error handlers, and exports the app.
+
+```ts
+import app from "./.nooh/app";
+
+// Standard Hono App instance
+export default app;
+```
+
+## `.nooh/router/**/*.ts`
+
+Each endpoint route file has a corresponding helper module in `.nooh/router/` providing method builders for that route:
+
+| Exported Helper | Method | Example Route File |
+| :--- | :--- | :--- |
+| `get(...)` | `GET` | `routes/users.get.ts` |
+| `post(...)` | `POST` | `routes/users.post.ts` |
+| `put(...)` | `PUT` | `routes/users/[id].put.ts` |
+| `patch(...)` | `PATCH` | `routes/users/[id].patch.ts` |
+| `del(...)` | `DELETE` | `routes/users/[id].delete.ts` |
+| `options(...)` | `OPTIONS` | `routes/users.options.ts` |
+| `head(...)` | `HEAD` | `routes/users.head.ts` |
+| `all(...)` | `ALL` | `routes/proxy.all.ts` |
+
+### Method Builder Overloads
+
+Method helpers can be called in two ways:
+
+1. **Direct Handler Function**:
+   ```ts
+   export default get((c) => c.text("Hello"));
+   ```
+
+2. **Route Configuration Object**:
+   ```ts
+   export default get({
+     middleware?: MiddlewareHandler[],
+     deps?: DependencyReference[],
+     validation?: {
+       json?: StandardSchema,
+       form?: StandardSchema,
+       query?: StandardSchema,
+       param?: StandardSchema,
+       header?: StandardSchema,
+       cookie?: StandardSchema,
+       response?: StandardSchema,
+     },
+     errors?: Record<string, ErrorConstructor>,
+     onError?: NoohErrorHandler,
+     handler: (input: { c; next; ...deps; errors }) => Response | Promise<Response>,
+   });
+   ```
+
+## Handler Input & Context
+
+Inside the route handler function, Nooh passes a single input object containing:
+
+- `c`: Standard Hono Context instance (supports `c.req.valid(target)` for validated inputs).
+- `next`: Hono next middleware function.
+- `...deps`: Properties named after each injected dependency declared in `deps`.
+- `errors`: Factory object providing typed constructors for errors declared in `errors`.
+

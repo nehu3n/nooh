@@ -1,0 +1,60 @@
+---
+title: Introduction
+description: What Nooh is, why it exists, and how it fits alongside Hono.
+---
+
+**Nooh** is a compile-time metaframework for [Hono](https://hono.dev). It adds a filesystem-first development model and a typed dependency injection system on top of Hono — without modifying Hono's runtime, replacing any of its APIs, or adding runtime dependencies.
+
+You write files. Nooh compiles them into a native Hono application.
+
+## What problem does it solve?
+
+Hono is a great backend framework — fast, lightweight, and runtime-agnostic. As an application grows, however, organizing routes, middleware, validation, and dependencies is left entirely to the developer. There is no convention, no structure, and no safety net.
+
+Nooh provides that structure:
+
+- **Filesystem routing** — The path of a file determines its HTTP route. `src/routes/users/[id].get.ts` becomes `GET /users/:id`.
+- **Compile-time code generation** — Nooh reads your route files and generates typed handler factories. The types flow from your config file all the way to the handler's `c` context.
+- **Typed dependency injection** — Dependencies are declared once, scoped explicitly, and injected into handlers at compile time. The compiler validates scopes, detects cycles, and enforces naming rules before anything runs.
+- **Standard Schema validation** — Any library that implements [Standard Schema](https://standardschema.dev) (Zod, Valibot, ArkType, …) works as a validator, both for incoming requests and outgoing responses.
+
+## How it fits with Hono
+
+Nooh **does not replace Hono**. The generated output is a standard Hono `app` that you mount, export, or wrap exactly as you would any other Hono application. The Hono ecosystem — middleware, adapters, `c.json`, `c.req.param`, everything — works without changes.
+
+```ts
+// src/index.ts — your unchanged Hono entry point
+import app from "../.nooh/app";
+
+export default app;
+```
+
+Nooh lives entirely at compile time. At runtime, it is invisible.
+
+## The compilation model
+
+When you run `nooh build`, the compiler:
+
+1. **Discovers** all route files and dependency containers inside the directories you specified in `nooh.config.ts`.
+2. **Parses** each file path into a route model (method, segments, group).
+3. **Analyzes** your dependency containers, resolves the dependency graph, and validates scopes.
+4. **Generates** typed router modules into `.nooh/`, one per route path, plus a top-level app module.
+5. **Introspects** each route file by importing it against a generated introspection router, recording which dependencies each handler requests.
+6. **Regenerates** the final runtime modules, this time with only the dependencies each route actually uses wired in.
+
+The result is a `.nooh/` folder that is a plain TypeScript project — no Nooh runtime, just Hono.
+
+<CardGroup cols={2}>
+  <Card title="Installation" href="/docs/introduction/installation" icon="package">
+    Add Nooh to an existing project or scaffold a new one.
+  </Card>
+  <Card title="Quickstart" href="/docs/introduction/quickstart" icon="rocket">
+    Build your first route in under five minutes.
+  </Card>
+  <Card title="Project structure" href="/docs/introduction/project-structure" icon="folder-tree">
+    Understand the layout of a Nooh project.
+  </Card>
+  <Card title="Why Nooh" href="/docs/introduction/why" icon="lightbulb">
+    The design decisions behind Nooh.
+  </Card>
+</CardGroup>

@@ -1,0 +1,24 @@
+---
+title: Routing
+description: How Nooh maps your filesystem to HTTP routes — static paths, dynamic segments, groups, and more.
+---
+
+Nooh's routing system derives your API's structure from the layout of files in your `routes` directory. Each file is one route endpoint; its path determines the URL and its name suffix determines the HTTP method.
+
+<CardGroup cols={2}>
+  <Card title="Routes" href="/docs/routing/routes" icon="file">
+    Static routes, index files, and how filenames become URLs.
+  </Card>
+  <Card title="Dynamic routes" href="/docs/routing/dynamic-routes" icon="brackets">
+    URL parameters, splat segments, and optional segments.
+  </Card>
+  <Card title="Methods" href="/docs/routing/methods" icon="zap">
+    Which HTTP methods are supported and how to express them.
+  </Card>
+  <Card title="Parameters" href="/docs/routing/parameters" icon="hash">
+    How to read and type path, query, and header parameters.
+  </Card>
+  <Card title="Route generation" href="/docs/routing/route-generation" icon="cpu">
+    What the compiler generates for each route and how to use it.
+  </Card>
+</CardGroup>

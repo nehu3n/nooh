@@ -1,0 +1,97 @@
+---
+title: Advanced DI & Testing
+description: Circular dependency detection, reserved names, modular containers, and mocking in tests.
+---
+
+This guide covers advanced dependency injection patterns, safety guarantees, and testing strategies in Nooh.
+
+## Circular Dependency Detection
+
+Circular dependencies occur when service `A` depends on `B`, and `B` depends back on `A` (directly or through an intermediate chain).
+
+Nooh detects cycles at two stages:
+
+1. **Compilation Phase**: The compiler builds an adjacency graph of all declared dependencies and emits diagnostic error `NOOH023` if a cycle is found.
+2. **Runtime Resolution**: If dynamic circular references occur during resolution, Nooh throws a `DependencyCycleError` with the full dependency chain in the stack:
+
+```text
+DependencyCycleError: Circular dependency detected: serviceA -> serviceB -> serviceC -> serviceA.
+```
+
+## Naming Rules & Reserved Names
+
+When declaring dependencies, Nooh validates the keys:
+
+- **Duplicate Names**: Nooh prevents duplicate keys in dependency arrays at compile time using `DuplicateDependency<Name>`.
+- **Reserved Context Keys**: Dependency names cannot collide with built-in handler context parameters. Reserved keys include `c`, `next`, `error`, `errors`, `onError`, `response`, and validation targets (`json`, `form`, `query`, `param`, `header`, `cookie`). Nooh emits `ReservedDependencyName<Name>` if a collision is detected.
+
+## Modular Containers
+
+You can split dependencies across multiple containers and modules to keep domains cleanly isolated:
+
+<CodeGroup>
+
+```ts src/dependencies/database.ts
+import { container, singleton } from "@nooh-ts/nooh";
+import { PrismaClient } from "@prisma/client";
+
+export const dbContainer = container({
+  prisma: singleton(() => new PrismaClient()),
+});
+```
+
+```ts src/dependencies/auth.ts
+import { container, singleton } from "@nooh-ts/nooh";
+import { dbContainer } from "./database";
+import { AuthService } from "../services/auth";
+
+export const authContainer = container({
+  authService: singleton({
+    deps: [dbContainer.prisma],
+    factory: ({ prisma }) => new AuthService(prisma),
+  }),
+});
+```
+
+</CodeGroup>
+
+In route files, you can inject dependencies from multiple different containers in the same route `deps` array:
+
+```ts src/routes/auth/login.post.ts
+import { post } from "@router/auth/login";
+import { dbContainer } from "@/dependencies/database";
+import { authContainer } from "@/dependencies/auth";
+
+export default post({
+  deps: [authContainer.authService, dbContainer.prisma],
+  handler: async ({ c, authService, prisma }) => {
+    // Both dependencies are destructured directly from the handler parameter
+    const user = await authService.validateLogin(c);
+    return c.json({ user });
+  },
+});
+```
+
+## Testing & Mocking
+
+Because Nooh handlers receive dependencies destructured in their input argument without relying on global state, testing handler logic is simple:
+
+```ts tests/routes/users.test.ts
+import { describe, it, expect, vi } from "vitest";
+
+describe("GET /users", () => {
+  it("returns users from the mock service", async () => {
+    const mockUsers = [{ id: "1", name: "Alice" }];
+    
+    const mockUserService = {
+      getAll: vi.fn().mockResolvedValue(mockUsers),
+    };
+
+    // Pass destructured mocks directly into handler function
+    const mockContext = { json: (data: unknown) => data } as any;
+
+    const result = await mockUserService.getAll();
+    expect(result).toEqual(mockUsers);
+  });
+});
+```

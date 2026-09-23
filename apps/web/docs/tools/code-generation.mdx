@@ -1,0 +1,62 @@
+---
+title: Code Generation & Compiler Pipeline
+description: How the Nooh compiler processes your project and transforms files into code.
+---
+
+Nooh is powered by a high-performance compiler (`@nooh-ts/compiler`) that transforms filesystem routes and containers into native Hono handlers.
+
+## Compilation Pipeline
+
+The compiler follows a 5-stage pipeline:
+
+```mermaid
+flowchart LR
+    A[1. Discover] --> B[2. Parse]
+    B --> C[3. Analyze]
+    C --> D[4. Plan]
+    D --> E[5. Generate]
+```
+
+### 1. Discovery (`discover`)
+Scans your `routes/` and `dependencies/` folders from the filesystem or in-memory source snapshots. Discovers all `.ts` endpoint files and `group.ts` group configurations.
+
+### 2. Parsing (`parse`)
+Analyzes filenames to determine:
+- HTTP method (e.g. `.get.ts`, `.post.ts`).
+- URL segment types (static segments, `[param]` dynamic segments, `[...splat]` catch-all segments).
+- Group hierarchies and nesting.
+
+### 3. Analysis (`analyze`)
+- Builds the complete dependency graph.
+- Runs cycle detection algorithms (`NOOH023`).
+- Validates dependency scope hierarchy (prevents singletons from capturing request-scoped dependencies).
+- Checks for duplicate route definitions or naming collisions.
+
+### 4. Planning (`plan`)
+Determines the minimal set of output files needed in `.nooh/` and generates an execution plan.
+
+### 5. Generation (`generate`)
+Renders TypeScript code for:
+- `.nooh/app.ts`: Root Hono router instance.
+- `.nooh/router/**/*.ts`: Route-specific helper functions with strong typing.
+- `.nooh/router/middleware.ts`: Middleware type utilities.
+
+## Bundler Integration (Unplugin)
+
+Nooh provides `@nooh-ts/plugin`, an [unplugin](https://github.com/unjs/unplugin) implementation compatible with Vite, Rollup, Webpack, and esbuild.
+
+```ts vite.config.ts
+import { defineConfig } from "vite";
+import nooh from "@nooh-ts/plugin/vite";
+
+export default defineConfig({
+  plugins: [
+    nooh({
+      config: "nooh.config.ts",
+      outputRoot: ".nooh",
+    }),
+  ],
+});
+```
+
+The plugin automatically hooks into your build tool's file watcher, rebuilding changed routes whenever you save a file.

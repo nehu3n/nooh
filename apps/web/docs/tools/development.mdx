@@ -1,0 +1,74 @@
+---
+title: Development Workflow
+description: Best practices for developing, debugging, and running Nooh projects locally.
+---
+
+Developing with Nooh is designed to feel as fast and seamless as standard Node.js or Bun development.
+
+## Setup & TypeScript Paths
+
+Ensure your `tsconfig.json` includes the generated `.nooh` directory in its `include` and `paths` configuration:
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@router/*": ["./.nooh/router/*"]
+    }
+  },
+  "include": ["src/**/*.ts", ".nooh/**/*.ts"]
+}
+```
+
+## Running Your Application
+
+### With Node.js and TSX
+
+```json package.json
+{
+  "scripts": {
+    "dev": "nooh dev -- pnpm exec tsx --watch src/index.ts",
+    "build": "nooh build"
+  }
+}
+```
+
+### With Bun
+
+```json package.json
+{
+  "scripts": {
+    "dev": "nooh dev -- bun --watch src/index.ts",
+    "build": "nooh build"
+  }
+}
+```
+
+### With Cloudflare Workers (Wrangler)
+
+```json package.json
+{
+  "scripts": {
+    "dev": "nooh dev -- wrangler dev",
+    "build": "nooh build"
+  }
+}
+```
+
+## Compiler Diagnostics
+
+When an issue is detected during compilation, the CLI presents color-coded diagnostics directly in your console:
+
+- **File & Line location**: Direct link to the offending file.
+- **Diagnostic Code**: E.g., `NOOH021` (Circular Dependency) or `NOOH001` (Invalid route syntax).
+- **Actionable Message**: Suggestions on how to resolve the issue.
+
+```text
+[nooh] ✖ Error in src/routes/users/[id].get.ts:
+       NOOH001: Invalid route parameter syntax '[id]'.
+```

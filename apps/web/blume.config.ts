@@ -1,10 +1,17 @@
 import { defineConfig } from "blume";
 
 export default defineConfig({
+  basePath: "/docs",
   content: {
     pages: "src",
-    root: "docs",
+    sources: [
+      {
+        root: "docs",
+        type: "filesystem",
+      },
+    ],
   },
+
   description:
     "A dependency-free, compile-time metaframework for building type-safe file-based Hono APIs.",
 
@@ -30,6 +37,7 @@ export default defineConfig({
       href: "https://github.com/nehu3n/nooh",
       label: "GitHub",
     },
+
     tabs: [],
   },
 

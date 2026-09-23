@@ -1,0 +1,47 @@
+---
+title: Why Nooh
+description: The design decisions behind Nooh — what it optimizes for and what trade-offs it makes.
+---
+
+## Starting point: Hono is great
+
+[Hono](https://hono.dev) is fast, lightweight, and runs on every JavaScript runtime. Its API is clean, its middleware system is composable, and its ecosystem is growing. There is no good reason to replace it.
+
+But Hono is a *library*, not a *framework*. It gives you the tools to build an API; it does not tell you how to organize one. As a project grows, that lack of convention becomes friction:
+
+- Where do routes live? In one file? In many?
+- How do you share a database connection across handlers without a global?
+- How do you make sure a route's URL parameters are typed correctly everywhere?
+- How do you prevent a singleton service from accidentally depending on a request-scoped one?
+
+These are not unsolvable problems, but every team solves them differently and usually discovers the edge cases late.
+
+## The Nooh answer
+
+Nooh makes one strong bet: **the filesystem is the right source of truth for an API's structure**.
+
+This is not a new idea — Next.js, Remix, Nuxt, and SvelteKit all use it for frontend routing — but it has not been applied rigorously to backend APIs built with a low-level framework like Hono.
+
+When the filesystem is the source of truth:
+
+- The shape of your API is readable from `ls`.
+- Adding a route is a matter of creating a file; removing one deletes it.
+- There is one canonical place for each route — no ambiguity, no "which file handles this again?".
+
+Nooh takes that structure and compiles it into typed handler factories before any code runs. The compiler knows which routes exist, what their parameters are, which dependencies they need, and what validation schemas they declare. It can then catch mistakes — bad scopes, missing dependencies, duplicate names — at build time, not at runtime.
+
+## What Nooh does not do
+
+Nooh deliberately avoids a few things:
+
+**It does not add a runtime.** The generated output is a plain Hono `app`. There is no Nooh runtime module that runs alongside your code. If you remove Nooh from the build pipeline, the generated files still work as-is.
+
+**It does not abstract away Hono.** You still call `c.json`, `c.req.param`, `c.header`, and every other Hono API directly. Nooh generates the factory functions that give you a typed context; what you do with that context is up to you.
+
+**It does not enforce a runtime architecture.** Nooh has opinions about build time (file layout, dependency scopes, validation targets) but none about runtime architecture. Use any database, any ORM, any external service.
+
+## The compile-time guarantee
+
+The most important thing Nooh gives you is a **compile-time guarantee**: if `nooh build` succeeds, the wiring between your routes, dependencies, and validation schemas is correct.
+
+That guarantee is possible because Nooh sees everything at once. It does not rely on decorators that run at import time, or on TypeScript inference that only works if you write things in a specific order. It reads files, builds a graph, validates it, and generates code — in one deterministic pass.

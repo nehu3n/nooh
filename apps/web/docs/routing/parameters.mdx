@@ -1,0 +1,150 @@
+---
+title: Parameters
+description: Reading and typing path parameters, query strings, and other request data in Nooh route handlers.
+---
+
+Parameters in Nooh work exactly as in Hono, since the generated modules produce native Hono handlers. The difference is that Nooh can layer *validation* on top to give you fully typed, runtime-safe access to request data.
+
+## Path parameters
+
+Path parameters come from dynamic segments in the filename (`[id]`, `[slug]`, etc.) and are accessed via `c.req.param()`:
+
+```ts
+// src/routes/users/[id].get.ts
+import { get } from "@router/users/[id]";
+
+export default get((c) => {
+  const id = c.req.param("id");    // string
+  const all = c.req.param();       // Record<string, string>
+  return c.json({ id });
+});
+```
+
+TypeScript infers the parameter names from the route path, so requesting a name that does not exist in the file path is a compile-time error.
+
+## Query parameters
+
+Query strings are accessible via `c.req.query()`:
+
+```ts
+export default get((c) => {
+  const page = c.req.query("page");    // string | undefined
+  const limit = c.req.query("limit");  // string | undefined
+  return c.json({ page, limit });
+});
+```
+
+To get type-safe, validated query parameters, use the `validation.query` option:
+
+```ts
+import { z } from "zod";
+
+export default get({
+  validation: {
+    query: z.object({
+      page: z.coerce.number().default(1),
+      limit: z.coerce.number().max(100).default(20),
+    }),
+  },
+  handler: ({ c }) => {
+    const { page, limit } = c.req.valid("query");
+    //      ^-- { page: number; limit: number }
+    return c.json({ page, limit });
+  },
+});
+```
+
+## Request body
+
+JSON and form bodies work the same way, via `validation.json` or `validation.form`:
+
+<Tabs>
+  <Tab title="JSON">
+    ```ts
+    import { z } from "zod";
+
+    export default post({
+      validation: {
+        json: z.object({
+          name: z.string().min(1),
+          email: z.string().email(),
+        }),
+      },
+      handler: ({ c }) => {
+        const body = c.req.valid("json");
+        //    ^-- { name: string; email: string }
+        return c.json({ created: body });
+      },
+    });
+    ```
+  </Tab>
+  <Tab title="Form data">
+    ```ts
+    import { z } from "zod";
+
+    export default post({
+      validation: {
+        form: z.object({
+          file: z.string(),
+        }),
+      },
+      handler: ({ c }) => {
+        const data = c.req.valid("form");
+        return c.json({ file: data.file });
+      },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Headers and cookies
+
+<Tabs>
+  <Tab title="Headers">
+    ```ts
+    import { z } from "zod";
+
+    export default get({
+      validation: {
+        header: z.object({
+          authorization: z.string().startsWith("Bearer "),
+        }),
+      },
+      handler: ({ c }) => {
+        const { authorization } = c.req.valid("header");
+        return c.json({ token: authorization.slice(7) });
+      },
+    });
+    ```
+  </Tab>
+  <Tab title="Cookies">
+    ```ts
+    import { z } from "zod";
+
+    export default get({
+      validation: {
+        cookie: z.object({
+          session: z.string().uuid(),
+        }),
+      },
+      handler: ({ c }) => {
+        const { session } = c.req.valid("cookie");
+        return c.json({ session });
+      },
+    });
+    ```
+  </Tab>
+</Tabs>
+
+## Validation targets summary
+
+| Target | Accessor | What it validates |
+|--------|----------|-------------------|
+| `json` | `c.req.valid("json")` | Request body (JSON) |
+| `form` | `c.req.valid("form")` | Request body (form data) |
+| `query` | `c.req.valid("query")` | URL query string |
+| `param` | `c.req.valid("param")` | URL path parameters |
+| `header` | `c.req.valid("header")` | Request headers |
+| `cookie` | `c.req.valid("cookie")` | Cookies |
+
+Validation runs before the handler. If any schema fails, the request is rejected before your handler is called. See [Request validation](/docs/validation/request-validation) for error handling details.

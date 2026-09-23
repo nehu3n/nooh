@@ -1,0 +1,54 @@
+---
+title: Response Validation
+description: Guarantee API output contracts and prevent leaking sensitive data.
+---
+
+In addition to validating incoming requests, Nooh supports **response validation**. This ensures that the data your handler returns strictly conforms to your API contract before reaching the client.
+
+## Why Validate Responses?
+
+1. **Security & Data Privacy**: Prevents accidental leakage of sensitive fields (like password hashes, API keys, or internal database timestamps).
+2. **Contract Fidelity**: Guarantees that downstream clients (frontend apps, mobile clients, external webhook consumers) never receive malformed or incomplete data.
+3. **Refactoring Safety**: Catches backend data shape changes during CI/CD test runs.
+
+## Defining Response Schemas
+
+Add a `response` schema under the `validation` key of your route options:
+
+```ts src/routes/users/[id].get.ts
+import { get } from "@router/users/[id]";
+import { z } from "zod";
+import { services } from "@/dependencies";
+
+const UserResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  createdAt: z.string().datetime(),
+  // passwordHash is omitted to protect sensitive data!
+});
+
+export default get({
+  deps: [services.userService],
+  validation: {
+    response: UserResponseSchema,
+  },
+  handler: async ({ c, userService }) => {
+    const { id } = c.req.param();
+    const user = await userService.findById(id);
+
+    // If user contains unwanted fields or lacks required ones,
+    // validation ensures only valid response data is sent.
+    return c.json(user);
+  },
+});
+```
+
+## How It Works
+
+When a response schema is specified:
+
+- The returned data is validated against the schema using standard validation engines.
+- If response validation fails, Nooh throws a `ResponseValidationError` containing the route name and validation issues (`issues`).
+- This protects against leaking sensitive fields or returning broken JSON payloads to clients.
+

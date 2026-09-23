@@ -1,0 +1,60 @@
+---
+title: HTTP Errors
+description: Using Hono's HTTPException and standard status codes in Nooh APIs.
+---
+
+For standard HTTP status codes and quick error aborts, Nooh supports Hono's built-in `HTTPException`.
+
+## Throwing `HTTPException`
+
+Import `HTTPException` from `hono/http-exception` and throw it directly within any route handler, middleware, or dependency factory:
+
+```ts src/routes/admin/stats.get.ts
+import { get } from "@router/admin/stats";
+import { HTTPException } from "hono/http-exception";
+
+export default get((c) => {
+  const apiKey = c.req.header("x-api-key");
+
+  if (!apiKey || apiKey !== process.env.ADMIN_KEY) {
+    throw new HTTPException(401, { message: "Unauthorized access: invalid or missing API key." });
+  }
+
+  return c.json({ status: "healthy", activeUsers: 42 });
+});
+```
+
+## Common HTTP Status Codes
+
+Nooh handlers frequently use standard HTTP status codes:
+
+| Code | Name | Typical Use Case |
+| :--- | :--- | :--- |
+| `400` | Bad Request | Malformed payload or syntax failure |
+| `401` | Unauthorized | Missing or invalid authentication credentials |
+| `403` | Forbidden | Authenticated, but lacking required permissions |
+| `404` | Not Found | Target resource does not exist |
+| `409` | Conflict | Duplicate resource key (e.g. email already in use) |
+| `422` | Unprocessable Entity | Schema validation failed |
+| `500` | Internal Server Error | Unexpected bug, unhandled crash, or database failure |
+
+## Custom Error Response Objects
+
+`HTTPException` allows attaching a custom `Response` instance if you want to bypass downstream formatting:
+
+```ts
+import { HTTPException } from "hono/http-exception";
+
+throw new HTTPException(403, {
+  res: new Response(
+    JSON.stringify({
+      error: "ACCOUNT_SUSPENDED",
+      supportUrl: "https://example.com/support",
+    }),
+    {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    }
+  ),
+});
+```

@@ -1,0 +1,136 @@
+---
+title: Core concepts
+description: The fundamental ideas behind Nooh — how the compiler works and how its pieces fit together.
+---
+
+Understanding these concepts will make the rest of the documentation clearer and help you reason about what Nooh does at each stage.
+
+## Filesystem routing
+
+Every `.ts` file inside your `routes` directory is a route. The file's **path** determines the URL; the file's **name suffix** (`.get.ts`, `.post.ts`, …) determines the HTTP method.
+
+| File | Route |
+|------|-------|
+| `routes/index.get.ts` | `GET /` |
+| `routes/health.get.ts` | `GET /health` |
+| `routes/users/index.post.ts` | `POST /users` |
+| `routes/users/[id].get.ts` | `GET /users/:id` |
+| `routes/files/$.get.ts` | `GET /files/*` |
+
+The compiler transforms this filesystem layout into a Hono router. You never write the routing logic yourself.
+
+## Generated router modules
+
+For each unique route *path* (not method), Nooh generates a router module in `.nooh/router/`. That module exports one typed factory function per HTTP method:
+
+```ts
+// .nooh/router/users/[id].ts  (generated — do not edit)
+export function get(handler) { ... }
+export function post(handler) { ... }
+```
+
+Your route files import from these generated modules:
+
+```ts
+// src/routes/users/[id].get.ts
+import { get } from "@router/users/[id]";
+
+export default get((c) => c.json({ id: c.req.param("id") }));
+```
+
+The `@router/*` alias is configured by the template. The path after `@router/` matches the route path, exactly.
+
+## The `App` type
+
+Your `nooh.config.ts` can export an `App` interface that matches Hono's `Env` type. Every generated router module imports this type and uses it as the `App` for all `Context`, `Handler`, and `MiddlewareHandler` generics — so your custom variables, bindings, and environment types flow through without any extra annotation.
+
+```ts
+// nooh.config.ts
+export interface App {
+  Variables: { user: User };
+  Bindings: { DATABASE_URL: string };
+}
+
+export default config<App>({ routes: "src/routes" });
+```
+
+## Dependency injection
+
+Nooh ships a typed, compile-time dependency injection system. You declare services in *containers*, assign them *scopes*, and the compiler wires the right ones into each route.
+
+There are four scopes:
+
+<Accordion>
+  <AccordionItem title="singleton">
+    Created once, the first time it is needed, and reused for every subsequent request. Good for things that are expensive to create and safe to share — database connections, HTTP clients, caches.
+  </AccordionItem>
+  <AccordionItem title="request">
+    Created once per incoming request and shared within that request. Good for things that should be consistent within a request but isolated between them — authenticated user objects, per-request loggers.
+  </AccordionItem>
+  <AccordionItem title="transient">
+    Created fresh every time it is resolved. Good for lightweight, stateless utilities.
+  </AccordionItem>
+  <AccordionItem title="value">
+    A static value — not a factory. Equivalent to a `singleton` that wraps a constant. Good for configuration objects.
+  </AccordionItem>
+</Accordion>
+
+The compiler enforces scope rules at build time: a `singleton` cannot depend on a `request`-scoped service, because the singleton outlives the request. Violations are reported as errors before anything runs.
+
+## Validation
+
+Nooh validates requests and responses using [Standard Schema](https://standardschema.dev) — a shared interface implemented by Zod, Valibot, ArkType, and others. You do not depend on a specific validation library; you depend on the interface.
+
+Validation targets map to parts of the HTTP request:
+
+| Target | Part of the request |
+|--------|---------------------|
+| `json` | Request body (JSON) |
+| `form` | Request body (form data) |
+| `query` | URL query parameters |
+| `param` | URL path parameters |
+| `header` | Request headers |
+| `cookie` | Cookies |
+| `response` | Response body |
+
+The compiler generates the correct input/output types for each target and infers them into your handler's context type — so `c.req.valid("json")` is typed without you writing a type annotation.
+
+## Error handling
+
+Nooh supports typed error handlers at two levels: per-route and per-group. You declare *error constructors* alongside your handler, and the compiler generates an `errors` object that is injected into the handler input:
+
+```ts
+export default get({
+  errors: {
+    notFound: NotFoundError,
+  },
+  handler: ({ c, errors }) => {
+    throw errors.notFound("Item not found.");
+  },
+});
+```
+
+You can also define a global `onError` handler in `nooh.config.ts` that catches anything not handled locally.
+
+## The compilation pipeline
+
+```
+nooh.config.ts + src/routes/ + src/deps/
+       │
+       ▼
+   [discover]   Find all route files and dep containers
+       │
+       ▼
+    [parse]     Extract method, path segments, group from each filename
+       │
+       ▼
+   [analyze]    Build the dependency graph; validate scopes and cycles
+       │
+       ▼
+  [introspect]  Import each route against a stub router to learn which deps it uses
+       │
+       ▼
+  [generate]    Emit typed .nooh/ modules with only the needed deps wired in
+```
+
+Each stage produces diagnostics. Any error stops the pipeline and reports the problem with a file path and error code so you can fix it before deploying.

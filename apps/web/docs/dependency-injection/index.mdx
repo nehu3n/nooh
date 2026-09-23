@@ -1,0 +1,21 @@
+---
+title: Dependency Injection
+description: Declare services, assign scopes, and let the compiler wire them into your handlers at build time.
+---
+
+Nooh's dependency injection system is purely compile-time. You declare services in containers, the compiler builds a dependency graph and validates it, and the generated route modules wire exactly the right dependencies into each handler — nothing more.
+
+<CardGroup cols={2}>
+  <Card title="Concepts" href="/docs/dependency-injection/concepts" icon="lightbulb">
+    How containers, references, and the resolution context work.
+  </Card>
+  <Card title="Providers" href="/docs/dependency-injection/providers" icon="box">
+    The four provider functions: singleton, request, transient, and value.
+  </Card>
+  <Card title="Scopes" href="/docs/dependency-injection/scopes" icon="layers">
+    Scope rules, the lifetime hierarchy, and scope validation.
+  </Card>
+  <Card title="Advanced" href="/docs/dependency-injection/advanced" icon="settings">
+    Circular dependency detection, cross-container sharing, and edge cases.
+  </Card>
+</CardGroup>

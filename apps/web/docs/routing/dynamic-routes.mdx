@@ -1,0 +1,85 @@
+---
+title: Dynamic routes
+description: URL parameters, splat segments, and how to define them in Nooh's filesystem routing.
+---
+
+When a route needs to capture variable parts of the URL, you use special bracket or dollar syntax in the filename. Nooh converts these to Hono path parameters at compile time.
+
+## Named parameters
+
+Wrap a segment name in square brackets to create a named URL parameter:
+
+| File | Route | Parameter |
+|------|-------|-----------|
+| `routes/users/[id].get.ts` | `GET /users/:id` | `id` |
+| `routes/posts/[slug].get.ts` | `GET /posts/:slug` | `slug` |
+| `routes/orgs/[org]/repos/[repo].get.ts` | `GET /orgs/:org/repos/:repo` | `org`, `repo` |
+
+Inside the handler, read them exactly as in any Hono app:
+
+```ts
+// src/routes/users/[id].get.ts
+import { get } from "@router/users/[id]";
+
+export default get((c) => {
+  const id = c.req.param("id");
+  return c.json({ id });
+});
+```
+
+Hono's type inference keeps `c.req.param("id")` typed as `string`. Requesting a parameter name that does not exist in the file path is a TypeScript error.
+
+## Splat segments (wildcards)
+
+A filename of `$.get.ts` (or any name ending in `$`) creates a wildcard segment that matches the rest of the path:
+
+| File | Route | Captures |
+|------|-------|---------|
+| `routes/files/$.get.ts` | `GET /files/*` | Everything after `/files/` |
+
+```ts
+// src/routes/files/$.get.ts
+import { get } from "@router/files/$";
+
+export default get((c) => {
+  const filePath = c.req.param("*");
+  return c.text(`Serving: ${filePath}`);
+});
+```
+
+:::note
+In Hono, the wildcard is accessed via `c.req.param("*")`. There is no named capture for splat segments.
+:::
+
+## Combining static and dynamic segments
+
+Static and dynamic segments can be mixed freely:
+
+<FileTree>
+
+- routes/
+  - orgs/
+    - [org]/
+      - repos/
+        - [repo]/
+          - index.get.ts
+          - commits.get.ts
+
+</FileTree>
+
+This produces:
+- `GET /orgs/:org/repos/:repo`
+- `GET /orgs/:org/repos/:repo/commits`
+
+Both `:org` and `:repo` are available via `c.req.param()` in every handler inside the nested structure.
+
+## Route generation for dynamic paths
+
+The `@router` import path mirrors the filesystem path exactly — brackets and all:
+
+```ts
+import { get } from "@router/users/[id]";
+import { get } from "@router/orgs/[org]/repos/[repo]";
+```
+
+This is how Nooh knows which parameters belong to which route — the import path is the contract, and the compiler enforces it.

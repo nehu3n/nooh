@@ -1,0 +1,57 @@
+---
+title: Compiler Diagnostics & Error Codes
+description: Complete catalog of NOOHxxx diagnostic codes emitted by the compiler.
+---
+
+When the Nooh compiler discovers an issue in your project layout, route naming, or dependency tree, it emits a diagnostic code with clear instructions on how to fix it.
+
+## Route Syntax & Structure Diagnostics
+
+| Code | Severity | Description | Fix |
+| :--- | :--- | :--- | :--- |
+| `NOOH001` | Error | Invalid endpoint filename. Expected `<name>.<method>.ts` or filename is empty. | Rename the endpoint file to conform to `<name>.<method>.ts` (e.g. `index.get.ts`). |
+| `NOOH002` | Error | Unsupported HTTP method in filename. | Use a valid HTTP method suffix: `get`, `post`, `put`, `patch`, `delete`, `options`, `head`, `all`. |
+| `NOOH003` | Error | Invalid route segment containing unclosed or misplaced `[` or `]`. | Ensure dynamic parameters are properly formatted like `[id]` or `[...rest]`. |
+| `NOOH004` | Error | Empty route segment (e.g. double slashes). | Remove extraneous slashes or empty folder names from your route path. |
+| `NOOH005` | Error | Duplicate route definition targeting the same method and path. | Remove duplicate route files targeting identical HTTP method and route path. |
+| `NOOH006` | Error | Duplicate route group definition for the same group path. | Avoid defining multiple `group.ts` files for the same route directory path. |
+
+---
+
+## Configuration Diagnostics
+
+| Code | Severity | Description | Fix |
+| :--- | :--- | :--- | :--- |
+| `NOOH010` | Error | Failed to load or evaluate `nooh.config.ts`. | Check your configuration file for syntax errors, missing modules, or import failures. |
+| `NOOH011` | Error | The Nooh config default export must be an object. | Ensure `nooh.config.ts` exports an object using `export default config({...})`. |
+| `NOOH012` | Error | Configured `routes` option must be a string. | Pass a relative directory path string to the `routes` property in `config()`. |
+| `NOOH013` | Error | Configured `dependencies` option must be a string. | Pass a relative directory path string to the `dependencies` property in `config()`. |
+| `NOOH014` | Error | Configured `validator` option must be an object. | Ensure `validator` in `config()` is an options object. |
+| `NOOH015` | Error | Configured `validator.engine` option must be a function. | Provide a standard validator engine function for `validator.engine`. |
+
+---
+
+## Dependency Injection Diagnostics
+
+| Code | Severity | Description | Fix |
+| :--- | :--- | :--- | :--- |
+| `NOOH020` | Error | Scope hierarchy violation (e.g. `singleton` depends on `request` or `transient`). | Adjust dependency scopes so higher lifetime scopes do not depend on lower lifetime scopes. |
+| `NOOH021` | Error | Dependency references an unknown or unregistered dependency. | Register the missing dependency in `container({...})` and export it. |
+| `NOOH022` | Error | Duplicate dependency provider registered. | Ensure each dependency provider is registered only once. |
+| `NOOH023` | Error | Circular dependency detected in dependency graph. | Refactor factory functions to break circular reference cycles between dependencies. |
+| `NOOH024` | Error | Failed to load dependency module file. | Fix module import or syntax errors in your dependency source files. |
+| `NOOH026` | Error | Invalid dependency reference in `deps` array. | Pass valid `DependencyReference` items (from `container({...})`) to `deps`. |
+| `NOOH027` | Error | Dependency reference is exported more than once. | Avoid exporting the same dependency reference multiple times across container files. |
+
+---
+
+## Introspection Diagnostics
+
+| Code | Severity | Description | Fix |
+| :--- | :--- | :--- | :--- |
+| `NOOH031` | Error | Failed to load route during introspection analysis. | Check route file for syntax errors or runtime exceptions during module evaluation. |
+| `NOOH032` | Error | The route did not expose Nooh route metadata. | Ensure route handler is exported using generated `@router/*` helpers (e.g. `export default get(...)`). |
+| `NOOH033` | Error | Cannot introspect compilation without a compilation plan. | Re-run build with a valid project plan. |
+| `NOOH034` | Error | Route references unknown dependency or dependency missing from graph. | Verify that all entries in the route's `deps` array exist in your DI container. |
+| `NOOH035` | Error | Route injects multiple dependencies with the same name. | Rename one of the conflicting dependencies in your `container({...})`. |
+

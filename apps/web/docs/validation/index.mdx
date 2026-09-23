@@ -1,0 +1,18 @@
+---
+title: Validation
+description: Validate requests and responses with any Standard Schema-compatible library.
+---
+
+Nooh's validation system is built on [Standard Schema](https://standardschema.dev) — a shared interface that Zod, Valibot, ArkType, and others all implement. You pick your library; Nooh generates the correct TypeScript types for the request context and response body.
+
+<CardGroup cols={2}>
+  <Card title="Schemas" href="/docs/validation/schemas" icon="file-code">
+    How Nooh uses Standard Schema and which libraries are supported.
+  </Card>
+  <Card title="Request validation" href="/docs/validation/request-validation" icon="arrow-down-to-line">
+    Validate JSON bodies, form data, query strings, headers, and cookies.
+  </Card>
+  <Card title="Response validation" href="/docs/validation/response-validation" icon="arrow-up-from-line">
+    Validate and type the response body at runtime.
+  </Card>
+</CardGroup>

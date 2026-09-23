@@ -1,0 +1,69 @@
+---
+title: CLI
+description: Command-line interface for compiling, watching, and running Nooh applications.
+---
+
+The Nooh CLI (`@nooh-ts/cli`) provides commands for building and developing your applications.
+
+## Installation
+
+```bash
+# pnpm
+pnpm add -D @nooh-ts/cli
+
+# npm
+npm install -D @nooh-ts/cli
+
+# bun
+bun add -d @nooh-ts/cli
+```
+
+## Commands
+
+### `nooh build`
+
+Compiles your project routes and dependencies into `.nooh/` and prepares the production app.
+
+```bash
+nooh build [options]
+```
+
+Options:
+- `-c, --config <path>`: Specify a custom configuration file path.
+
+### `nooh watch`
+
+Starts the compiler in watch mode. It monitors your `routes/` directory and re-generates router artifacts instantly whenever files are added, modified, or deleted.
+
+```bash
+nooh watch [options]
+```
+
+### `nooh dev`
+
+Runs the Nooh watch compiler alongside your backend runtime server.
+
+```bash
+nooh dev [options] -- <command> [args...]
+```
+
+Example in `package.json`:
+
+```json package.json
+{
+  "scripts": {
+    "dev": "nooh dev -- pnpm exec tsx --watch src/index.ts",
+    "build": "nooh build"
+  }
+}
+```
+
+## Configuration Resolution
+
+The CLI automatically looks for configuration files in this order:
+
+1. `nooh.config.ts` (project root)
+2. `src/nooh.config.ts`
+3. `src/config.ts`
+
+You can always override the config location explicitly using `-c` / `--config`.

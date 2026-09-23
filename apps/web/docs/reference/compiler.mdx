@@ -1,0 +1,67 @@
+---
+title: Compiler API Reference
+description: Programmatic API for @nooh-ts/compiler and bundler plugins.
+---
+
+The Nooh compiler is designed to be fully decoupled and usable programmatically in scripts, custom build tools, or bundler plugins.
+
+## `compile` Function
+
+Compiles a snapshot of project files into a `Compilation` result.
+
+```ts
+import { compile } from "@nooh-ts/compiler";
+
+const result = await compile({
+  config: "src/config.ts",
+  loader: {
+    loadDefault: async (path) => import(path).then((m) => m.default),
+  },
+  sources: {
+    files: [
+      { path: "src/config.ts", content: "..." },
+      { path: "src/routes/index.get.ts", content: "..." },
+    ],
+  },
+  options: {
+    outputRoot: ".nooh",
+  },
+});
+
+console.log(result.diagnostics);
+console.log(result.model.routes);
+```
+
+## `Compilation` Result Interface
+
+```ts
+export interface Compilation {
+  readonly diagnostics: readonly Diagnostic[];
+  readonly model: ProjectModel;
+  readonly plan: CompilationPlan | null;
+  readonly output: GeneratedOutput | null;
+}
+```
+
+- `diagnostics`: Array of compilation warnings and errors.
+- `model`: Extracted AST representing routes, groups, and the DI graph.
+- `plan`: Planned file outputs and module groupings.
+- `output`: Generated source code strings for each module.
+
+## Bundler Plugins (`@nooh-ts/plugin`)
+
+Import the plugin for your preferred build tool:
+
+```ts
+// Vite
+import nooh from "@nooh-ts/plugin/vite";
+
+// Rollup
+import nooh from "@nooh-ts/plugin/rollup";
+
+// Webpack
+import nooh from "@nooh-ts/plugin/webpack";
+
+// esbuild
+import nooh from "@nooh-ts/plugin/esbuild";
+```

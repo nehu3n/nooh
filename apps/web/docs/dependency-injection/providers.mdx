@@ -1,0 +1,104 @@
+---
+title: Providers
+description: The four provider functions in Nooh — singleton, request, transient, and value.
+---
+
+Nooh provides four provider functions to declare how instances are created and managed:
+
+<CardGroup cols={2}>
+  <Card title="singleton" icon="box">
+    Instantiated once and shared across the entire application lifecycle.
+  </Card>
+  <Card title="request" icon="refresh-cw">
+    Instantiated once per HTTP request and cached for that request's duration.
+  </Card>
+  <Card title="transient" icon="sparkles">
+    Instantiated anew every single time it is resolved or requested.
+  </Card>
+  <Card title="value" icon="database">
+    Wraps a static constant, configuration object, or pre-constructed value.
+  </Card>
+</CardGroup>
+
+## `singleton`
+
+Use `singleton` for stateless services, connection pools, clients, or caches that should live for the lifetime of your server.
+
+### Basic Factory
+
+When the singleton doesn't need other dependencies:
+
+```ts
+import { singleton } from "@nooh-ts/nooh";
+import { PrismaClient } from "@prisma/client";
+
+export const prisma = singleton(() => new PrismaClient());
+```
+
+### With Dependencies
+
+When the singleton needs other dependencies, pass an options object with `deps` and a `factory` function:
+
+```ts
+import { singleton } from "@nooh-ts/nooh";
+
+export const authService = singleton({
+  deps: [db, jwtConfig],
+  factory: ({ db, jwtConfig }) => new AuthService(db, jwtConfig),
+});
+```
+
+## `request`
+
+Use `request` for services that need per-request state, such as authentication context, tenant information, or localized audit loggers.
+
+```ts
+import { request } from "@nooh-ts/nooh";
+
+export const tenantContext = request(() => new TenantContext());
+
+export const tenantRepo = request({
+  deps: [db, tenantContext],
+  factory: ({ db, tenantContext }) => new TenantRepository(db, tenantContext),
+});
+```
+
+If multiple services within the same HTTP request depend on `tenantContext`, they all receive the exact same instance. Once the request finishes, the instance is garbage-collected.
+
+## `transient`
+
+Use `transient` for lightweight, stateful helpers or commands where every consumer must receive an isolated, fresh instance.
+
+```ts
+import { transient } from "@nooh-ts/nooh";
+
+export const queryBuilder = transient(() => new QueryBuilder());
+
+export const reportGenerator = transient({
+  deps: [queryBuilder],
+  factory: ({ queryBuilder }) => new ReportGenerator(queryBuilder),
+});
+```
+
+## `value`
+
+Use `value` to register plain static data, configuration objects, or third-party instances initialized outside the container:
+
+```ts
+import { value } from "@nooh-ts/nooh";
+
+export const appConfig = value({
+  env: process.env.NODE_ENV ?? "development",
+  port: Number(process.env.PORT ?? 3000),
+  corsOrigin: "*",
+});
+```
+
+## Quick Reference Summary
+
+| Provider | Lifetime | Instantiation | Sharing |
+| :--- | :--- | :--- | :--- |
+| `singleton` | Entire app process | On first resolution | Shared globally |
+| `request` | Single HTTP request | On first resolution in request | Shared within request |
+| `transient` | Call-site | On every resolution | Never shared |
+| `value` | Static | Immediate | Shared globally |

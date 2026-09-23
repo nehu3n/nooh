@@ -1,0 +1,118 @@
+---
+title: Error Handlers
+description: Catch and format uncaught exceptions with global and group-level error handlers.
+---
+
+Error handlers in Nooh let you intercept unhandled exceptions and transform them into structured, predictable HTTP responses.
+
+## Global Error Handler
+
+Define a global error handler in your `nooh.config.ts` file using the `onError` option:
+
+```ts nooh.config.ts
+import { config } from "@nooh-ts/nooh";
+import { HTTPException } from "hono/http-exception";
+import { UserNotFoundError } from "./src/errors/user";
+
+export default config({
+  routes: "src/routes",
+
+  onError: (error, c) => {
+    // 1. Handle HTTP Exceptions
+    if (error instanceof HTTPException) {
+      return c.json(
+        {
+          error: {
+            code: "HTTP_EXCEPTION",
+            message: error.message,
+          },
+        },
+        error.status
+      );
+    }
+
+    // 2. Handle Custom Domain Errors
+    if (error instanceof UserNotFoundError) {
+      return c.json(
+        {
+          error: {
+            code: error.code,
+            message: error.message,
+            userId: error.userId,
+          },
+        },
+        404
+      );
+    }
+
+    // 3. Fallback for unexpected errors (500 Internal Server Error)
+    console.error("Unhandled server error:", error);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "An unexpected error occurred.",
+        },
+      },
+      500
+    );
+  },
+});
+```
+
+## Endpoint-Level Error Handlers
+
+You can also attach an `onError` handler directly to an individual route endpoint options object:
+
+```ts src/routes/users/[id].get.ts
+import { get } from "@router/users/[id]";
+
+export default get({
+  handler: async ({ c }) => {
+    // ...
+  },
+  onError: (error, c) => {
+    return c.json({ customError: error.message }, 400);
+  },
+});
+```
+
+## Route Group Error Handlers
+
+You can scope error handling to specific sub-paths or route groups by declaring an `onError` handler in the group's `group.ts` file:
+
+```ts src/routes/api/v1/group.ts
+import { group } from "@nooh-ts/nooh";
+
+export default group({
+  onError: (error, c) => {
+    // This handler will only catch errors thrown within /api/v1/*
+    return c.json(
+      {
+        apiVersion: "1.0",
+        error: error.message,
+      },
+      500
+    );
+  },
+});
+```
+
+## Error Handler Signature
+
+The `NoohErrorHandler` type matches Hono's `ErrorHandler` signature:
+
+```ts
+import type { Context, Env } from "hono";
+import type { HandlerResponse, HTTPResponseError } from "hono/types";
+
+export type NoohErrorHandler<
+  Environment extends Env = Env,
+  Path extends string = string,
+> = (
+  error: Error | HTTPResponseError,
+  c: Context<Environment, Path>
+) => HandlerResponse<unknown>;
+```
+
+This guarantees full compatibility with existing Hono middleware and plugins.

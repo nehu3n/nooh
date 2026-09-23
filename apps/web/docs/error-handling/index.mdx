@@ -1,0 +1,18 @@
+---
+title: Error Handling
+description: Handle errors gracefully with typed error factories, per-route handlers, and global fallbacks.
+---
+
+Nooh gives you two levels of error handling: per-route typed error factories that make throwing structured errors ergonomic, and global or group-level `onError` handlers that catch anything not handled locally.
+
+<CardGroup cols={2}>
+  <Card title="Errors" href="/docs/error-handling/errors" icon="circle-x">
+    Defining and throwing typed errors in route handlers.
+  </Card>
+  <Card title="Error handlers" href="/docs/error-handling/error-handlers" icon="shield-alert">
+    Per-route, per-group, and global error handlers.
+  </Card>
+  <Card title="HTTP errors" href="/docs/error-handling/http-errors" icon="server-crash">
+    Working with Hono's built-in HTTP error classes.
+  </Card>
+</CardGroup>
