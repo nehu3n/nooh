@@ -1,5 +1,5 @@
 import type { Context, Env } from "hono";
-import type { HandlerResponse, HTTPResponseError } from "hono/types";
+import type { HTTPResponseError } from "hono/types";
 
 // biome-ignore lint/suspicious/noExplicitAny: ...
 export type ErrorConstructor = new (...args: any[]) => Error;
@@ -18,4 +18,4 @@ export type NoohErrorHandler<
 > = (
   error: Error | HTTPResponseError,
   c: Context<Environment, Path>
-) => HandlerResponse<unknown>;
+) => Response | Promise<Response>;

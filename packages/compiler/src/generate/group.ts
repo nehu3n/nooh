@@ -34,9 +34,6 @@ const getGroupRoutes = (
     });
 };
 
-const capitalize = (value: string): string =>
-  value.charAt(0).toUpperCase() + value.slice(1);
-
 const getGroup = (model: ProjectModel, id: string): RouteGroup | undefined =>
   model.groups.find((group) => group.id === id);
 
@@ -72,6 +69,7 @@ export const generateGroupModule = (
 
   const imports = [
     `import { Hono } from "hono";`,
+    `import type { MiddlewareHandler } from "hono";`,
     `import type { App } from ${JSON.stringify(
       relativeModuleSpecifier(moduleId, typesModuleId)
     )};`,
@@ -101,83 +99,56 @@ export const generateGroupModule = (
     );
   });
 
-  const methods = [...new Set(routes.map((route) => route.method))].sort();
-
-  const registerTypes = [
-    "type RouteRegister = (",
-    "  path: string,",
-    "  ...handlers: any[]",
-    ") => typeof route;",
+  const registrations = [
+    ...routes.map((route, index) => ({
+      path: ensureLeadingSlash(route.localPath),
+      value: `endpoint${index}`,
+    })),
+    ...children.map((child, index) => ({
+      path: getChildPath(group, child),
+      value: `child${index}`,
+    })),
   ];
 
-  const registerDeclarations = methods.map((method) => {
-    const name = `register${capitalize(method)}`;
+  const registrationCode =
+    registrations.length === 0
+      ? ["  return app;"]
+      : [
+          "  return app",
+          ...registrations.map((registration, index) => {
+            const suffix = index === registrations.length - 1 ? ";" : "";
 
-    return `const ${name} = route.${method} as unknown as RouteRegister;`;
-  });
-
-  const useDeclaration = group.configSource
-    ? [
-        "type RouteUse = (",
-        "  path: string,",
-        "  ...handlers: any[]",
-        ") => typeof route;",
-        "",
-        "const use = route.use as unknown as RouteUse;",
-        "",
-        'use("*", ...(groupConfig.middleware ?? []));',
-      ]
-    : [];
-
-  const routeRegistrations = routes.map((route, index) => {
-    const register = `register${capitalize(route.method)}`;
-    const path = JSON.stringify(ensureLeadingSlash(route.localPath));
-    const endpointApp = `endpointApp${index}`;
-    const endpointRegister = `registerEndpoint${index}`;
-
-    return [
-      `  if (endpoint${index}.onError === undefined) {`,
-      `    ${register}(${path}, ...endpoint${index});`,
-      "  } else {",
-      `    const ${endpointApp} = new Hono<App>();`,
-      `    ${endpointApp}.onError(`,
-      `      endpoint${index}.onError as Parameters<typeof ${endpointApp}.onError>[0],`,
-      "    );",
-      `    const ${endpointRegister} = ${endpointApp}.${route.method} as unknown as RouteRegister;`,
-      `    ${endpointRegister}(${path}, ...endpoint${index});`,
-      `    route.route(${path}, ${endpointApp});`,
-      "  }",
-    ].join("\n");
-  });
-
-  const childRegistrations = children.map(
-    (child, index) =>
-      `  route.route(${JSON.stringify(
-        getChildPath(group, child)
-      )}, child${index});`
-  );
-
-  const groupErrorHandler = group.configSource
-    ? [
-        "",
-        "if (groupConfig.onError !== undefined) {",
-        "  route.onError(groupConfig.onError);",
-        "}",
-      ]
-    : [];
+            return `    .route(${JSON.stringify(
+              registration.path
+            )}, ${registration.value})${suffix}`;
+          }),
+        ];
 
   const code = [
     ...imports,
     "",
-    "const route = new Hono<App>();",
+    "const route = (() => {",
+    "  const app = new Hono<App>();",
     "",
-    ...registerTypes,
-    "",
-    ...registerDeclarations,
-    ...(useDeclaration.length > 0 ? ["", ...useDeclaration] : []),
-    ...groupErrorHandler,
-    ...(routeRegistrations.length > 0 ? ["", ...routeRegistrations] : []),
-    ...(childRegistrations.length > 0 ? ["", ...childRegistrations] : []),
+    ...(group.configSource
+      ? [
+          "  for (const middleware of groupConfig.middleware ?? []) {",
+          "    app.use(",
+          '      "*",',
+          "      middleware as MiddlewareHandler<App>",
+          "    );",
+          "  }",
+          "",
+          "  if (groupConfig.onError !== undefined) {",
+          "    app.onError(",
+          "      groupConfig.onError as Parameters<typeof app.onError>[0]",
+          "    );",
+          "  }",
+          "",
+        ]
+      : []),
+    ...registrationCode,
+    "})();",
     "",
     "export default route;",
     "",
