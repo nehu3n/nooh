@@ -1,0 +1,127 @@
+---
+title: RPC Client
+description: Build end-to-end type-safe applications using Hono's native client (hc) and Nooh's generated AppType.
+---
+
+Nooh is designed to work seamlessly with [Hono's RPC system](https://hono.dev/docs/guides/rpc). Because Nooh compiles your filesystem routes into a standard Hono application instance, the generated code is **100% compatible** with Hono's official type-safe client (`hono/client`).
+
+You do not need to install custom client generation tools, build adapters, or learn a proprietary RPC API. Standard `hono/client` works out of the box.
+
+---
+
+## Setting Up the Client
+
+To consume your Nooh API from a client (React, Vue, Svelte, Next.js, React Native, or a Node/Bun service), import `hc` from `hono/client` and `AppType` from `.nooh/app`:
+
+```ts title="src/client.ts"
+import { hc } from "hono/client";
+import type { AppType } from "../.nooh/app";
+
+// Create a type-safe RPC client
+export const client = hc<AppType>("http://localhost:3000");
+```
+
+In a monorepo setup, you can export `AppType` from your backend package and import it directly into your frontend or API SDK.
+
+---
+
+## End-to-End Example
+
+### 1. Define a Validated Route
+
+Create a route handler in your Nooh project with path and query parameters using [Standard Schema](/docs/validation):
+
+```ts title="routes/users/[id].get.ts"
+import { z } from "zod";
+import { get } from "@router/users/[id]";
+
+export default get({
+  validation: {
+    param: z.object({
+      id: z.string(),
+    }),
+    query: z.object({
+      includePosts: z.boolean().optional(),
+    }),
+  },
+  handler: async ({ c }) => {
+    const { id } = c.req.valid("param");
+    const { includePosts } = c.req.valid("query");
+
+    return c.json({
+      id,
+      name: "Alex",
+      includePosts: includePosts ?? false,
+    });
+  },
+});
+```
+
+### 2. Consume with `hc`
+
+Use the generated client to make calls with automatic type checking and autocompletion:
+
+```ts title="src/index.ts"
+import { hc } from "hono/client";
+import type { AppType } from "../.nooh/app";
+
+const client = hc<AppType>("http://localhost:3000");
+
+// Path parameters, query params, and responses are fully typed!
+const res = await client.users[":id"].$get({
+  param: {
+    id: "user_123",
+  },
+  query: {
+    includePosts: true,
+  },
+});
+
+if (res.ok) {
+  const data = await res.json();
+  // data is automatically typed as { id: string; name: string; includePosts: boolean }
+  console.log(`User: ${data.name}`);
+}
+```
+
+---
+
+## Inferring Request & Response Types
+
+Hono provides utility types `InferRequestType` and `InferResponseType` to derive types directly from client methods. This is useful when defining props for frontend components or SDK helper functions:
+
+```ts title="src/types.ts"
+import type { InferRequestType, InferResponseType } from "hono/client";
+import { client } from "./client";
+
+const getUserMethod = client.users[":id"].$get;
+
+// Inferred request payload type (params, query, body, headers)
+export type GetUserRequest = InferRequestType<typeof getUserMethod>;
+
+// Inferred response data type
+export type GetUserResponse = InferResponseType<typeof getUserMethod>;
+```
+
+You can then use these types in your UI components:
+
+```tsx title="components/UserProfile.tsx"
+import type { GetUserResponse } from "../types";
+
+interface UserProfileProps {
+  user: GetUserResponse;
+}
+
+export function UserProfile({ user }: UserProfileProps) {
+  return <div>{user.name}</div>;
+}
+```
+
+---
+
+## Key Benefits
+
+- **Zero Custom Adapters**: Works directly with Hono's native `hc` client.
+- **Full Standard Schema Integration**: Schemas defined with Zod, Valibot, or ArkType automatically type client request parameters and payloads.
+- **Strict Compile-Time Safety**: Catches invalid endpoint paths, missing path variables, and payload mismatches during development.
+- **Lightweight & Fast**: No heavy runtime reflection or code generators required on the client.

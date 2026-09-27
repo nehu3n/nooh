@@ -8,6 +8,7 @@ export default defineMeta({
     "validation",
     "error-handling",
     "dependency-injection",
+    "rpc",
     "tools",
     "reference",
   ],
